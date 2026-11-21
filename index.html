@@ -1,0 +1,4544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NEON PULSE // Cyberpunk Chronometer & Screensaver</title>
+  
+  <!-- Dynamic Favicon Emoji via Link Tag (Pure SVG Data URI - Zero external dependencies) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.88em%22 font-size=%2286%22>⏱️</text></svg>">
+
+  <style>
+    /* ==========================================================================
+       1. CSS CUSTOM PROPERTIES & DYNAMIC NEON THEMES
+       ========================================================================== */
+    :root {
+      /* Default Theme: Cyberpunk (Pink & Cyan) */
+      --neon-primary: #00ffcc;       /* Vibrant cyan neon core */
+      --neon-secondary: #ff007f;     /* Hot magenta/pink accent */
+      --neon-glow: rgba(0, 255, 204, 0.45);
+      --neon-glow-secondary: rgba(255, 0, 127, 0.35);
+      --neon-core: #ffffff;
+      
+      /* Dark Cyber Backgrounds */
+      --bg-dark: #07070d;
+      --bg-dark-secondary: #0d0d18;
+      --bg-card: rgba(13, 13, 24, 0.72);
+      --bg-glass: rgba(18, 18, 32, 0.82);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --border-neon: rgba(0, 255, 204, 0.35);
+
+      /* Typography & Font Stacks */
+      --font-mono: 'Consolas', 'SF Mono', 'Cascadia Code', 'Roboto Mono', 'Courier New', monospace;
+      --font-digital: 'Courier New', 'Lucida Console', Monaco, monospace;
+      --font-tech: 'Impact', 'Trebuchet MS', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      
+      /* Active Clock Digits Font */
+      --clock-digit-font: var(--font-mono);
+      --clock-letter-spacing: -2px;
+      
+      /* Animation Timing */
+      --pulse-duration: 2s;
+      --pulse-scale: 1.02;
+      --glow-spread: 1;
+      
+      /* HUD & Utility Colors */
+      --text-muted: #6e738d;
+      --text-dim: #9da3ba;
+      --text-bright: #e9ecf8;
+      --success: #00ff88;
+      --warning: #ffb703;
+      --danger: #ff2a5f;
+    }
+
+    /* Theme Overrides */
+    body[data-theme="cyberpunk"] {
+      --neon-primary: #00ffcc;
+      --neon-secondary: #ff007f;
+      --neon-glow: rgba(0, 255, 204, 0.5);
+      --neon-glow-secondary: rgba(255, 0, 127, 0.4);
+      --border-neon: rgba(0, 255, 204, 0.4);
+    }
+
+    body[data-theme="matrix"] {
+      --neon-primary: #00ff66;
+      --neon-secondary: #15ff00;
+      --neon-glow: rgba(0, 255, 102, 0.55);
+      --neon-glow-secondary: rgba(21, 255, 0, 0.35);
+      --border-neon: rgba(0, 255, 102, 0.4);
+    }
+
+    body[data-theme="sunset"] {
+      --neon-primary: #ff7b00;
+      --neon-secondary: #9d4edd;
+      --neon-glow: rgba(255, 123, 0, 0.55);
+      --neon-glow-secondary: rgba(157, 78, 221, 0.45);
+      --border-neon: rgba(255, 123, 0, 0.4);
+    }
+
+    body[data-theme="arctic"] {
+      --neon-primary: #ffffff;
+      --neon-secondary: #00b4d8;
+      --neon-glow: rgba(224, 247, 250, 0.65);
+      --neon-glow-secondary: rgba(0, 180, 216, 0.5);
+      --border-neon: rgba(0, 180, 216, 0.4);
+    }
+
+    body[data-theme="vapor"] {
+      --neon-primary: #ff70a6;
+      --neon-secondary: #b388eb;
+      --neon-glow: rgba(255, 112, 166, 0.55);
+      --neon-glow-secondary: rgba(179, 136, 235, 0.45);
+      --border-neon: rgba(255, 112, 166, 0.4);
+    }
+
+    /* ==========================================================================
+       RESPONSIVE RESET & ACCESSIBLE TOUCH TARGETS
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background-color: var(--bg-dark);
+      color: var(--text-bright);
+      font-family: var(--font-mono);
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.4s ease;
+    }
+
+    /* Prevent double-tap zoom on all interactive controls */
+    button, a, input, select, .digit-group, .clock-display-row, .icon-btn, .theme-chip, .cyber-badge-btn, .hud-tab-btn, .day-pill, .preset-pill, .toggle-wrapper {
+      touch-action: manipulation;
+    }
+
+    /* Minimum 44px x 44px touch target accessibility guarantee */
+    button, 
+    .icon-btn,
+    .cyber-btn,
+    .hud-tab-btn,
+    .theme-chip,
+    .cyber-badge-btn,
+    .alarm-preset-btn,
+    .preset-pill,
+    .custom-select,
+    .cyber-time-picker,
+    .screensaver-exit-btn,
+    .modal-close-btn {
+      min-height: 44px;
+    }
+
+    /* ==========================================================================
+       2. RETRO-CYBER ATMOSPHERE: CANVAS, PERSPECTIVE GRID & SCANLINES
+       ========================================================================== */
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.75;
+      transition: opacity 0.3s ease;
+    }
+
+    /* 3D Moving Perspective Horizon Floor - Contained to prevent horizontal scrolling */
+    .cyber-floor-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      height: 48vh;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cyber-floor-grid {
+      position: absolute;
+      bottom: 0;
+      left: -50%;
+      width: 200%;
+      height: 100%;
+      transform: perspective(450px) rotateX(68deg);
+      transform-origin: bottom center;
+      background-image: 
+        linear-gradient(to right, var(--neon-glow) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--neon-glow-secondary) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridDrift 20s linear infinite;
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    @keyframes gridDrift {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 600px; }
+    }
+
+    /* Ambient Central Glow Mesh */
+    .ambient-radial-glow {
+      position: fixed;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(85vw, 950px);
+      height: clamp(240px, 45vh, 560px);
+      background: radial-gradient(circle, var(--neon-glow) 0%, var(--neon-glow-secondary) 38%, transparent 72%);
+      filter: blur(clamp(35px, 8vw, 85px));
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 1;
+      transition: background 0.8s ease, opacity 0.8s ease;
+    }
+
+    /* CRT Scanlines and Phosphor Flicker (Toggleable) */
+    .crt-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.32) 50%
+      ), linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.015),
+        rgba(0, 255, 0, 0.01),
+        rgba(0, 0, 255, 0.015)
+      );
+      background-size: 100% 3px, 3px 100%;
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0.65;
+      transition: opacity 0.3s ease;
+    }
+
+    .crt-overlay.disabled {
+      opacity: 0;
+    }
+
+    /* Vignette Edge Shading */
+    .vignette-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      box-shadow: inset 0 0 clamp(40px, 10vw, 120px) rgba(0, 0, 0, 0.88);
+      pointer-events: none;
+      z-index: 98;
+    }
+
+    /* ALARM FULLSCREEN STROBE FLASH OVERLAY */
+    .alarm-flash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      background: transparent;
+      transition: opacity 0.1s ease;
+    }
+
+    .alarm-flash-screen.active {
+      display: block;
+      animation: alarmStrobe 0.45s infinite alternate ease-in-out;
+    }
+
+    @keyframes alarmStrobe {
+      0% {
+        opacity: 0.85;
+        background: radial-gradient(circle, rgba(255, 42, 95, 0.75) 0%, rgba(255, 0, 80, 0.9) 100%);
+        box-shadow: inset 0 0 180px #ff2a5f;
+      }
+      100% {
+        opacity: 0.4;
+        background: radial-gradient(circle, rgba(0, 255, 204, 0.6) 0%, rgba(13, 13, 24, 0.85) 100%);
+        box-shadow: inset 0 0 120px #00ffcc;
+      }
+    }
+
+    /* ==========================================================================
+       3. TOP HUD & TELEMETRY BAR (FULLY RESPONSIVE)
+       ========================================================================== */
+    .hud-header {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: clamp(8px, 2vw, 16px) clamp(8px, 2.5vw, 24px) 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      transition: opacity 0.5s ease;
+    }
+
+    .hud-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .hud-logo-icon {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border: 2px solid var(--neon-primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 14px var(--neon-glow), inset 0 0 8px var(--neon-glow);
+      animation: logoPulse 3s ease-in-out infinite;
+      cursor: pointer;
+      background: rgba(14, 14, 28, 0.6);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .hud-logo-icon:active {
+      transform: scale(0.94);
+    }
+
+    .hud-logo-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: var(--neon-primary);
+      stroke-width: 2;
+    }
+
+    @keyframes logoPulse {
+      0%, 100% { border-color: var(--neon-primary); box-shadow: 0 0 14px var(--neon-glow); }
+      50% { border-color: var(--neon-secondary); box-shadow: 0 0 18px var(--neon-glow-secondary); }
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+      font-weight: 800;
+      letter-spacing: clamp(1.2px, 0.4vw, 3px);
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #ffffff, var(--neon-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 16px var(--neon-glow);
+      line-height: 1.2;
+    }
+
+    .brand-status {
+      font-size: clamp(0.58rem, 1.6vw, 0.68rem);
+      letter-spacing: clamp(0.8px, 0.2vw, 2px);
+      color: var(--neon-primary);
+      opacity: 0.85;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: blinkDot 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes blinkDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    /* HUD Metrics & Status Indicators */
+    .hud-telemetry {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 1.8vw, 16px);
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px clamp(10px, 2vw, 16px);
+      border-radius: 20px;
+      font-size: clamp(0.65rem, 1.8vw, 0.74rem);
+      letter-spacing: clamp(0.8px, 0.2vw, 1.5px);
+      flex-wrap: wrap;
+    }
+
+    .telemetry-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .telemetry-item span.val {
+      color: var(--neon-primary);
+      font-weight: 700;
+      transition: color 0.3s ease;
+    }
+
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Audio Equalizer Mini Bars */
+    .audio-eq-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 16px;
+      width: 18px;
+      pointer-events: none;
+    }
+    .eq-bar {
+      width: 3px;
+      background: var(--neon-primary);
+      border-radius: 1px;
+      transition: height 0.15s ease;
+      height: 3px;
+    }
+    .audio-active .eq-bar:nth-child(1) { animation: eqBounce 0.6s infinite ease-in-out alternate; }
+    .audio-active .eq-bar:nth-child(2) { animation: eqBounce 0.8s infinite 0.15s ease-in-out alternate; }
+    .audio-active .eq-bar:nth-child(3) { animation: eqBounce 0.5s infinite 0.3s ease-in-out alternate; }
+    .audio-active .eq-bar:nth-child(4) { animation: eqBounce 0.7s infinite 0.1s ease-in-out alternate; }
+
+    @keyframes eqBounce {
+      0% { height: 3px; }
+      100% { height: 16px; box-shadow: 0 0 6px var(--neon-primary); }
+    }
+
+    /* Micro Icon Buttons (Strict 44px x 44px Touch Size) */
+    .icon-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      color: var(--text-bright);
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      position: relative;
+      outline: none;
+      flex-shrink: 0;
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--neon-primary);
+      color: var(--neon-primary);
+      box-shadow: 0 0 14px var(--neon-glow);
+      transform: translateY(-2px);
+    }
+
+    .icon-btn:active {
+      transform: translateY(0) scale(0.94);
+    }
+
+    .icon-btn.active {
+      border-color: var(--neon-secondary);
+      color: var(--neon-secondary);
+      box-shadow: 0 0 14px var(--neon-glow-secondary);
+    }
+
+    /* Tooltip Helper (Active only on mouse hover) */
+    @media (hover: hover) and (pointer: fine) {
+      .icon-btn[data-tip]::after,
+      .cyber-badge-btn[data-tip]::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: -32px;
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        background: rgba(10, 10, 20, 0.95);
+        border: 1px solid var(--neon-primary);
+        color: #fff;
+        font-size: 0.65rem;
+        letter-spacing: 1px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        z-index: 100;
+      }
+
+      .icon-btn:hover::after,
+      .cyber-badge-btn:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    /* Toast Notification Badge - Floating at Bottom to avoid blocking UI */
+    .hud-toast {
+      position: fixed;
+      bottom: clamp(16px, 4vh, 32px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(12, 12, 24, 0.94);
+      border: 1px solid var(--neon-primary);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: clamp(0.7rem, 2vw, 0.76rem);
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      box-shadow: 0 0 20px var(--neon-glow);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 2000;
+      max-width: min(92vw, 480px);
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .hud-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ==========================================================================
+       4. MAIN DISPLAY VIEWPORT & CHASSIS (FLUID RESPONSIVE)
+       ========================================================================== */
+    .main-viewport {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(6px, 1.8vw, 16px) clamp(6px, 2vw, 20px) 24px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Cyber Navigation Tabs (Horizontal Touch Scroll on Mobile) */
+    .hud-tabs {
+      display: flex;
+      align-items: center;
+      background: rgba(10, 10, 20, 0.85);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: clamp(12px, 2.5vw, 24px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(0, 255, 204, 0.05);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      max-width: 100%;
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      justify-content: flex-start;
+    }
+
+    .hud-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hud-tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+      font-weight: 700;
+      letter-spacing: clamp(0.8px, 0.2vw, 2px);
+      text-transform: uppercase;
+      padding: 8px clamp(10px, 1.8vw, 18px);
+      min-height: 44px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      outline: none;
+      position: relative;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .hud-tab-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    .hud-tab-btn:hover {
+      color: var(--text-bright);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .hud-tab-btn.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, rgba(0, 255, 204, 0.22) 0%, rgba(255, 0, 127, 0.16) 100%);
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 20px var(--neon-glow), inset 0 0 10px rgba(0, 255, 204, 0.2);
+      text-shadow: 0 0 8px var(--neon-primary);
+    }
+
+    /* Interactive Chassis Frame */
+    .clock-chassis {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: clamp(14px, 3vw, 24px);
+      padding: clamp(14px, 3vw, 36px) clamp(8px, 2.5vw, 36px) clamp(16px, 3vw, 32px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 clamp(15px, 3vw, 35px) var(--neon-glow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 0 30px rgba(0, 255, 204, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Cyber Corner Brackets */
+    .chassis-corner {
+      position: absolute;
+      width: clamp(12px, 2vw, 18px);
+      height: clamp(12px, 2vw, 18px);
+      border: 2px solid var(--neon-primary);
+      pointer-events: none;
+      transition: all 0.3s ease;
+      opacity: 0.85;
+    }
+    .chassis-corner.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; border-top-left-radius: clamp(14px, 3vw, 24px); }
+    .chassis-corner.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; border-top-right-radius: clamp(14px, 3vw, 24px); }
+    .chassis-corner.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; border-bottom-left-radius: clamp(14px, 3vw, 24px); }
+    .chassis-corner.br { bottom: -1px; right: -1px; border-left: none; border-top: none; border-bottom-right-radius: clamp(14px, 3vw, 24px); }
+
+    .clock-chassis:hover .chassis-corner {
+      border-color: var(--neon-secondary);
+      box-shadow: 0 0 12px var(--neon-glow-secondary);
+    }
+
+    /* Technical Header Sub-info */
+    .chassis-top-telemetry {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: clamp(12px, 2.5vw, 22px);
+      padding-bottom: clamp(8px, 1.8vw, 12px);
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.09);
+      font-size: clamp(0.65rem, 1.8vw, 0.72rem);
+      letter-spacing: clamp(0.8px, 0.2vw, 2px);
+      color: var(--text-dim);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .telemetry-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 10px;
+      min-height: 44px;
+      border-radius: 8px;
+      border-left: 2px solid var(--neon-primary);
+      white-space: nowrap;
+    }
+
+    .chassis-quick-toggles {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cyber-badge-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px clamp(8px, 1.5vw, 12px);
+      min-height: 44px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: clamp(0.65rem, 1.8vw, 0.7rem);
+      letter-spacing: 1px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-bright);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      outline: none;
+      position: relative;
+      white-space: nowrap;
+    }
+
+    .cyber-badge-btn:hover {
+      border-color: var(--neon-primary);
+      color: var(--neon-primary);
+      box-shadow: 0 0 10px var(--neon-glow);
+    }
+
+    .cyber-badge-btn:active {
+      transform: scale(0.96);
+    }
+
+    .cyber-badge-btn.active {
+      background: rgba(0, 255, 204, 0.15);
+      border-color: var(--neon-primary);
+      color: var(--neon-primary);
+      box-shadow: 0 0 12px var(--neon-glow);
+    }
+
+    .ampm-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      min-height: 44px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: clamp(0.68rem, 1.8vw, 0.75rem);
+      letter-spacing: 1.5px;
+      background: rgba(0, 255, 204, 0.1);
+      border: 1px solid var(--neon-primary);
+      color: var(--neon-primary);
+      box-shadow: 0 0 10px var(--neon-glow);
+      transition: all 0.3s ease;
+    }
+
+    .ampm-badge.pm {
+      background: rgba(255, 0, 127, 0.12);
+      border-color: var(--neon-secondary);
+      color: var(--neon-secondary);
+      box-shadow: 0 0 10px var(--neon-glow-secondary);
+    }
+
+    /* ==========================================================================
+       5. NEON CLOCK CORE DIGITS & PULSE ANIMATIONS (FLUID 320px - 4K)
+       ========================================================================== */
+    .clock-stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* Pulsing container wrapper */
+    .pulse-engine {
+      animation: neonPulseCycle var(--pulse-duration) infinite ease-in-out;
+      transform-origin: center center;
+      will-change: transform, filter;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Configurable Pulse Modes */
+    .pulse-mode-heartbeat {
+      animation: pulseHeartbeat 1s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .pulse-mode-synthwave {
+      animation: neonPulseCycle 0.5s infinite ease-in-out;
+    }
+    .pulse-mode-breathe {
+      animation: neonPulseCycle 3.5s infinite ease-in-out;
+    }
+    .pulse-mode-hyper {
+      animation: pulseHyper 0.25s infinite alternate ease-in-out;
+    }
+    .pulse-mode-solid {
+      animation: none !important;
+      transform: none !important;
+    }
+
+    @keyframes neonPulseCycle {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 18px var(--neon-glow)) drop-shadow(0 0 40px var(--neon-glow));
+      }
+      50% {
+        transform: scale(var(--pulse-scale));
+        filter: drop-shadow(0 0 32px var(--neon-glow)) drop-shadow(0 0 75px var(--neon-glow-secondary));
+      }
+    }
+
+    @keyframes pulseHeartbeat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.035); filter: drop-shadow(0 0 35px var(--neon-glow)); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.02); filter: drop-shadow(0 0 25px var(--neon-glow)); }
+      70% { transform: scale(1); }
+    }
+
+    @keyframes pulseHyper {
+      0% { transform: scale(1); filter: drop-shadow(0 0 15px var(--neon-glow)); }
+      100% { transform: scale(1.018); filter: drop-shadow(0 0 45px var(--neon-glow-secondary)); }
+    }
+
+    /* The glowing primary time row - Scaled with clamp & viewport */
+    .clock-display-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: clamp(2px, 1.2vw, 10px);
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      line-height: 1;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      transition: transform 0.2s ease;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* Font Style Variations */
+    .font-style-0 {
+      font-family: var(--font-mono);
+      letter-spacing: clamp(-2px, -0.3vw, -1px);
+    }
+    .font-style-1 {
+      font-family: var(--font-digital);
+      letter-spacing: clamp(1px, 0.8vw, 5px);
+    }
+    .font-style-2 {
+      font-family: var(--font-tech);
+      letter-spacing: clamp(0.5px, 0.4vw, 1px);
+      text-transform: uppercase;
+    }
+
+    /* Segment Card Housing Digits */
+    .digit-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(14, 14, 28, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: clamp(6px, 1.5vw, 16px);
+      padding: clamp(4px, 1vw, 10px) clamp(4px, 1.5vw, 18px);
+      box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.05), inset 0 -4px 10px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      min-height: 44px;
+    }
+
+    .digit-group:hover {
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 28px var(--neon-glow), inset 0 0 18px rgba(0, 255, 204, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .digit-chars {
+      font-size: clamp(1.3rem, 5.8vw, 7.5rem);
+      font-weight: 900;
+      color: var(--neon-core);
+      text-shadow:
+        0 0 6px #ffffff,
+        0 0 14px var(--neon-primary),
+        0 0 28px var(--neon-primary),
+        0 0 55px var(--neon-primary),
+        0 0 90px var(--neon-secondary);
+      transition: text-shadow 0.3s ease, color 0.3s ease;
+      display: inline-block;
+      min-width: 2ch;
+      text-align: center;
+      line-height: 1;
+    }
+
+    /* Pulsing Separators (Colon) */
+    .colon-separator {
+      font-size: clamp(1.1rem, 5vw, 6.5rem);
+      font-weight: 900;
+      color: var(--neon-secondary);
+      padding: 0 clamp(1px, 0.4vw, 4px);
+      animation: colonBlink 1s ease-in-out infinite;
+      text-shadow:
+        0 0 6px #fff,
+        0 0 15px var(--neon-secondary),
+        0 0 35px var(--neon-secondary),
+        0 0 70px var(--neon-secondary);
+      transform-origin: center;
+      line-height: 1;
+    }
+
+    @keyframes colonBlink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.25; transform: scale(0.92); }
+    }
+
+    /* Milliseconds & Cyber Sub-indicators */
+    .ms-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-left: clamp(2px, 0.5vw, 6px);
+      gap: clamp(2px, 0.4vw, 4px);
+      flex-shrink: 0;
+    }
+
+    .ms-digits {
+      font-size: clamp(0.7rem, 2.5vw, 2.6rem);
+      font-weight: 800;
+      color: var(--neon-primary);
+      text-shadow: 0 0 10px var(--neon-primary), 0 0 24px var(--neon-glow);
+      min-width: 2ch;
+      line-height: 1;
+    }
+
+    .ms-bar-track {
+      width: clamp(20px, 4vw, 75px);
+      height: clamp(3px, 0.5vw, 4px);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ms-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--neon-primary), var(--neon-secondary));
+      box-shadow: 0 0 8px var(--neon-primary);
+      transition: width 0.05s linear;
+    }
+
+    /* Sub-label for Hours, Minutes, Seconds */
+    .group-label {
+      position: absolute;
+      bottom: clamp(-15px, -1.8vw, -18px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(0.48rem, 1.3vw, 0.62rem);
+      letter-spacing: clamp(0.8px, 0.2vw, 2px);
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* Floor Reflection */
+    .reflection-container {
+      position: relative;
+      margin-top: clamp(6px, 1.5vw, 10px);
+      max-height: clamp(26px, 7vw, 90px);
+      overflow: hidden;
+      transform: scaleY(-1);
+      opacity: 0.24;
+      filter: blur(2.5px);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0,0,0,0.3) 40%, transparent 80%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0,0,0,0.3) 40%, transparent 80%);
+      user-select: none;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      width: 100%;
+    }
+
+    /* ==========================================================================
+       6. NEON ANALOG CLOCK DISPLAY (PROPORTIONALLY SCALED)
+       ========================================================================== */
+    .analog-clock-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 10px 0 20px;
+      position: relative;
+      animation: fadeInView 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .analog-clock-container.active {
+      display: flex;
+    }
+
+    .analog-svg {
+      width: clamp(190px, 60vw, 360px);
+      height: clamp(190px, 60vw, 360px);
+      max-width: 90vw;
+      max-height: 48vh;
+      filter: drop-shadow(0 0 25px var(--neon-glow));
+      transition: filter 0.4s ease;
+      flex-shrink: 0;
+      aspect-ratio: 1 / 1;
+    }
+
+    /* Analog Dial Elements */
+    .analog-bezel {
+      fill: rgba(10, 10, 20, 0.8);
+      stroke: var(--neon-primary);
+      stroke-width: 3;
+      filter: drop-shadow(0 0 10px var(--neon-primary));
+    }
+
+    .analog-inner-ring {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.12);
+      stroke-width: 1.5;
+      stroke-dasharray: 4, 6;
+    }
+
+    .analog-center-radar {
+      fill: none;
+      stroke: var(--neon-glow);
+      stroke-width: 1;
+    }
+
+    .analog-hour-mark {
+      stroke: var(--neon-primary);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 5px var(--neon-primary));
+    }
+
+    .analog-min-mark {
+      stroke: rgba(255, 255, 255, 0.25);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+    }
+
+    .analog-numeral {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 800;
+      fill: #ffffff;
+      text-anchor: middle;
+      dominant-baseline: central;
+      filter: drop-shadow(0 0 6px var(--neon-primary));
+    }
+
+    .analog-hand-hour {
+      stroke: var(--neon-primary);
+      stroke-width: 6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 10px var(--neon-primary));
+      transform-origin: 200px 200px;
+      transition: transform 0.1s cubic-bezier(0.4, 2.0, 0.5, 1);
+    }
+
+    .analog-hand-minute {
+      stroke: var(--neon-secondary);
+      stroke-width: 4;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px var(--neon-secondary));
+      transform-origin: 200px 200px;
+      transition: transform 0.05s linear;
+    }
+
+    .analog-hand-second {
+      stroke: #ffffff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 10px #ffffff) drop-shadow(0 0 15px var(--neon-primary));
+      transform-origin: 200px 200px;
+    }
+
+    .analog-hand-tail {
+      stroke: var(--neon-secondary);
+      stroke-width: 3;
+      stroke-linecap: round;
+      transform-origin: 200px 200px;
+    }
+
+    .analog-hub-outer {
+      fill: var(--neon-primary);
+      filter: drop-shadow(0 0 8px var(--neon-primary));
+    }
+
+    .analog-hub-inner {
+      fill: #ffffff;
+    }
+
+    .analog-digital-subtext {
+      margin-top: 14px;
+      font-size: clamp(1rem, 3.5vw, 1.25rem);
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #fff;
+      text-shadow: 0 0 12px var(--neon-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ==========================================================================
+       7. CALENDAR & SYSTEM TELEMETRY STRIP (RESPONSIVE)
+       ========================================================================== */
+    .hud-calendar-strip {
+      width: 100%;
+      margin-top: clamp(14px, 3vw, 30px);
+      padding-top: clamp(12px, 2.2vw, 20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(10px, 2vw, 16px);
+    }
+
+    /* Day of week pill tags */
+    .days-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(4px, 1.2vw, 8px);
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .day-pill {
+      font-size: clamp(0.58rem, 1.8vw, 0.72rem);
+      font-weight: 700;
+      letter-spacing: clamp(0.8px, 0.2vw, 1.5px);
+      color: var(--text-muted);
+      padding: clamp(6px, 1vw, 8px) clamp(6px, 1.4vw, 12px);
+      min-height: 38px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+    }
+
+    .day-pill.active {
+      color: #fff;
+      background: rgba(0, 255, 204, 0.15);
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 12px var(--neon-glow);
+      text-shadow: 0 0 6px var(--neon-primary);
+    }
+
+    /* Full Date Display with Day Name in Neon Style */
+    .formatted-date-row {
+      display: flex;
+      align-items: center;
+      gap: clamp(6px, 1.5vw, 12px);
+      font-size: clamp(0.78rem, 2.6vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: clamp(1px, 0.4vw, 3.5px);
+      text-transform: uppercase;
+      color: var(--text-bright);
+      text-align: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      line-height: 1.4;
+    }
+
+    .formatted-date-row .neon-day-name {
+      color: var(--neon-primary);
+      text-shadow: 0 0 14px var(--neon-primary), 0 0 28px var(--neon-glow);
+    }
+
+    .formatted-date-row .highlight-date {
+      color: #ffffff;
+      text-shadow: 0 0 12px var(--neon-secondary), 0 0 24px var(--neon-glow-secondary);
+    }
+
+    /* Chrono telemetry mini meters (Day progress & Year progress) */
+    .progress-telemetry-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(10px, 2.5vw, 24px);
+      width: 100%;
+      max-width: 680px;
+      flex-wrap: wrap;
+    }
+
+    .telemetry-progress-box {
+      flex: 1;
+      min-width: min(100%, 180px);
+      background: rgba(10, 10, 20, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 14px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: clamp(0.64rem, 1.8vw, 0.68rem);
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+
+    .progress-bar-rail {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--neon-primary), var(--neon-secondary));
+      border-radius: 3px;
+      box-shadow: 0 0 8px var(--neon-glow);
+      transition: width 0.4s ease;
+    }
+
+    /* Embedded World Clocks Row (NY, London, Tokyo) - Responsive Grid */
+    .embedded-world-section {
+      width: 100%;
+      margin-top: clamp(14px, 3vw, 24px);
+      padding-top: clamp(12px, 2vw, 18px);
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.35s ease;
+    }
+
+    .embedded-world-section.hidden {
+      display: none;
+    }
+
+    .embedded-world-header {
+      font-size: clamp(0.65rem, 2vw, 0.72rem);
+      letter-spacing: clamp(0.8px, 0.2vw, 2.5px);
+      color: var(--neon-primary);
+      font-weight: 800;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .embedded-world-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+      gap: 14px;
+      width: 100%;
+    }
+
+    .mini-world-card {
+      background: rgba(12, 12, 24, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+      transition: all 0.25s ease;
+    }
+
+    .mini-world-card:hover {
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 16px var(--neon-glow);
+      transform: translateY(-2px);
+    }
+
+    .mini-wc-city {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
+    }
+
+    .mini-wc-tag {
+      font-size: 0.62rem;
+      color: var(--neon-secondary);
+      letter-spacing: 1px;
+    }
+
+    .mini-wc-time {
+      font-size: clamp(1.2rem, 3.8vw, 1.45rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 10px var(--neon-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mini-wc-date {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* ==========================================================================
+       8. SECONDARY MODES: STOPWATCH, TIMER, WORLD HUD (RESPONSIVE)
+       ========================================================================== */
+    .view-mode-container {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeInView 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .view-mode-container.active {
+      display: flex;
+    }
+
+    @keyframes fadeInView {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Stopwatch Display */
+    .stopwatch-digits {
+      font-size: clamp(1.5rem, 6vw, 6.2rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 10px #fff, 0 0 25px var(--neon-primary), 0 0 50px var(--neon-glow);
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      width: 100%;
+      word-break: break-all;
+    }
+
+    .hud-controls-row {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 16px);
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* Cyber Button Styles */
+    .cyber-btn {
+      background: rgba(14, 14, 28, 0.85);
+      border: 1px solid var(--border-neon);
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: clamp(0.74rem, 2vw, 0.82rem);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 12px clamp(16px, 3vw, 26px);
+      min-height: 44px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+    }
+
+    .cyber-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      flex-shrink: 0;
+    }
+
+    .cyber-btn:hover {
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 22px var(--neon-glow);
+      transform: translateY(-2px);
+      color: var(--neon-primary);
+    }
+
+    .cyber-btn:active {
+      transform: translateY(1px);
+    }
+
+    .cyber-btn.btn-primary {
+      background: linear-gradient(135deg, rgba(0, 255, 204, 0.25) 0%, rgba(0, 255, 204, 0.08) 100%);
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 16px var(--neon-glow);
+    }
+
+    .cyber-btn.btn-danger {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+    .cyber-btn.btn-danger:hover {
+      border-color: var(--danger);
+      box-shadow: 0 0 20px rgba(255, 42, 95, 0.5);
+      color: #fff;
+      background: rgba(255, 42, 95, 0.2);
+    }
+
+    /* Laps Log Box */
+    .laps-container {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 24px;
+      max-height: 180px;
+      overflow-y: auto;
+      background: rgba(8, 8, 16, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px clamp(10px, 2vw, 16px);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .laps-container::-webkit-scrollbar {
+      width: 4px;
+    }
+    .laps-container::-webkit-scrollbar-thumb {
+      background: var(--neon-primary);
+      border-radius: 2px;
+    }
+
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 8px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+      font-size: clamp(0.7rem, 2vw, 0.76rem);
+      letter-spacing: 1.5px;
+    }
+    .lap-item:last-child { border-bottom: none; }
+    .lap-num { color: var(--text-dim); }
+    .lap-time { color: var(--neon-primary); font-weight: 700; }
+
+    /* Timer Dial & Ring (Proportionally Scaled) */
+    .timer-ring-container {
+      position: relative;
+      width: clamp(170px, 52vw, 240px);
+      height: clamp(170px, 52vw, 240px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+
+    .timer-svg-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .timer-circle-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 8;
+    }
+
+    .timer-circle-bar {
+      fill: none;
+      stroke: var(--neon-primary);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 691;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.5s linear, stroke 0.4s ease;
+      filter: drop-shadow(0 0 10px var(--neon-primary));
+    }
+
+    .timer-center-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .timer-display {
+      font-size: clamp(1.6rem, 5.5vw, 2.5rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 14px var(--neon-primary);
+      letter-spacing: 1px;
+    }
+
+    .timer-presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    .preset-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-dim);
+      padding: 8px clamp(10px, 2vw, 16px);
+      min-height: 44px;
+      border-radius: 22px;
+      font-size: clamp(0.66rem, 1.8vw, 0.72rem);
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preset-pill:hover, .preset-pill.active {
+      background: rgba(0, 255, 204, 0.15);
+      border-color: var(--neon-primary);
+      color: var(--neon-primary);
+      box-shadow: 0 0 10px var(--neon-glow);
+    }
+
+    /* World Clocks Dedicated Grid */
+    .world-clocks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+      gap: 16px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .world-clock-card {
+      background: rgba(10, 10, 20, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .world-clock-card:hover {
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 18px var(--neon-glow);
+      transform: translateY(-2px);
+    }
+
+    .wc-city {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .wc-offset {
+      font-size: 0.65rem;
+      color: var(--neon-secondary);
+      letter-spacing: 1px;
+    }
+
+    .wc-time {
+      font-size: clamp(1.3rem, 4.5vw, 1.6rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 10px var(--neon-primary);
+    }
+
+    .wc-date {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* ==========================================================================
+       9. MASTER CONTROL PANEL & THEME DOCK (RESPONSIVE)
+       ========================================================================== */
+    .control-dock {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 1000px;
+      margin: 20px auto 10px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: clamp(14px, 3vw, 20px);
+      padding: clamp(14px, 2.5vw, 22px) clamp(10px, 3vw, 28px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 2.5vw, 18px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: opacity 0.4s ease;
+    }
+
+    .dock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .dock-section-title {
+      font-size: clamp(0.68rem, 1.8vw, 0.72rem);
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 5 Required Themes + Auto + Custom */
+    .theme-selector-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .theme-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-bright);
+      padding: 8px 14px;
+      min-height: 44px;
+      border-radius: 10px;
+      font-size: clamp(0.68rem, 1.8vw, 0.74rem);
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      outline: none;
+      white-space: nowrap;
+    }
+
+    .theme-color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      flex-shrink: 0;
+    }
+
+    .theme-chip:hover {
+      border-color: var(--neon-primary);
+      color: var(--neon-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 0 12px var(--neon-glow);
+    }
+
+    .theme-chip.active {
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      box-shadow: 0 0 16px var(--neon-glow);
+    }
+
+    /* Custom Color Input Wrapper (44px touch area) */
+    .custom-color-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      flex-shrink: 0;
+    }
+
+    .custom-color-input {
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .custom-color-chip {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px dashed rgba(255, 255, 255, 0.4);
+      background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+      pointer-events: none;
+    }
+
+    .custom-color-wrapper:hover .custom-color-chip {
+      transform: scale(1.15);
+      border-color: #fff;
+    }
+
+    /* Row 2: Alarm Master Control Strip */
+    .dock-alarm-strip {
+      width: 100%;
+      background: rgba(10, 10, 20, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px clamp(10px, 2vw, 18px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .alarm-inputs-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .cyber-time-picker {
+      background: rgba(14, 14, 28, 0.95);
+      border: 1px solid var(--border-neon);
+      color: var(--neon-primary);
+      font-family: var(--font-mono);
+      font-size: clamp(0.78rem, 2vw, 0.86rem);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      padding: 8px 12px;
+      min-height: 44px;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .cyber-time-picker:focus, .cyber-time-picker:hover {
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 12px var(--neon-glow);
+    }
+
+    .alarm-preset-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-dim);
+      font-size: clamp(0.65rem, 1.8vw, 0.68rem);
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      min-height: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .alarm-preset-btn:hover {
+      border-color: var(--neon-primary);
+      color: var(--neon-primary);
+    }
+
+    /* Pulse Engine & Glow Sliders / Selectors */
+    .dock-selectors-group {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 2vw, 18px);
+      flex-wrap: wrap;
+    }
+
+    .control-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: clamp(0.68rem, 1.8vw, 0.72rem);
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      min-height: 44px;
+    }
+
+    .custom-select {
+      background: rgba(14, 14, 28, 0.9);
+      border: 1px solid var(--border-glass);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: clamp(0.68rem, 1.8vw, 0.72rem);
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      min-height: 44px;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .custom-select:hover, .custom-select:focus {
+      border-color: var(--neon-primary);
+      box-shadow: 0 0 10px var(--neon-glow);
+    }
+
+    /* Range Sliders */
+    .slider-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cyber-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: clamp(75px, 15vw, 100px);
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      outline: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .cyber-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--neon-primary);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--neon-primary);
+      transition: transform 0.2s ease;
+    }
+
+    .cyber-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Cyber Toggle Switch with Minimum 44px Touch Target */
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      min-height: 44px;
+      padding: 4px 6px;
+      user-select: none;
+    }
+
+    .cyber-toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      transition: background 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .cyber-toggle::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    .toggle-wrapper.active .cyber-toggle {
+      background: var(--neon-primary);
+      box-shadow: 0 0 10px var(--neon-glow);
+    }
+
+    .toggle-wrapper.active .cyber-toggle::before {
+      transform: translateX(18px);
+      background: #000;
+    }
+
+    /* Screensaver Mode Floating Exit Bar */
+    body.screensaver-mode .hud-header,
+    body.screensaver-mode .control-dock,
+    body.screensaver-mode .hud-tabs,
+    body.screensaver-mode .hud-footer {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    body.screensaver-mode:hover .hud-header,
+    body.screensaver-mode:hover .control-dock,
+    body.screensaver-mode:hover .hud-tabs {
+      opacity: 0.95;
+      pointer-events: all;
+    }
+
+    .screensaver-exit-btn {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+      background: rgba(14, 14, 28, 0.9);
+      border: 1px solid var(--neon-primary);
+      color: #fff;
+      padding: 10px 18px;
+      min-height: 44px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 0 16px var(--neon-glow);
+    }
+
+    body.screensaver-mode .screensaver-exit-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ==========================================================================
+       10. MODALS: ALARM TRIGGER ALERT & KEYBOARD SHORTCUTS (RESPONSIVE)
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 5, 10, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: clamp(8px, 2.5vw, 20px);
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      animation: modalFadeIn 0.25s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-dialog {
+      background: var(--bg-dark-secondary);
+      border: 1px solid var(--neon-primary);
+      border-radius: 18px;
+      width: 100%;
+      max-width: min(520px, 94vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: clamp(16px, 4vw, 28px);
+      box-shadow: 0 0 40px var(--neon-glow);
+      position: relative;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 1.5rem;
+      line-height: 1;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+    }
+    .modal-close-btn:hover { color: var(--danger); }
+
+    .modal-title {
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      letter-spacing: 1.5px;
+      color: #fff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 40px;
+    }
+
+    .shortcuts-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .shortcut-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: clamp(0.7rem, 2vw, 0.78rem);
+      color: var(--text-dim);
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .kbd-chip {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--neon-primary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.6);
+      white-space: nowrap;
+    }
+
+    /* Alarm Trigger Alert Modal */
+    .alarm-alert-card {
+      background: #100a14;
+      border: 2px solid var(--danger);
+      box-shadow: 0 0 60px rgba(255, 42, 95, 0.8), inset 0 0 20px rgba(255, 42, 95, 0.3);
+      text-align: center;
+      padding: clamp(20px, 5vw, 36px) clamp(14px, 4vw, 28px);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      max-width: min(440px, 94vw);
+      width: 100%;
+      animation: alertPulse 0.8s infinite alternate ease-in-out;
+    }
+
+    @keyframes alertPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.03); }
+    }
+
+    .alarm-alert-title {
+      font-size: clamp(0.95rem, 3.5vw, 1.3rem);
+      font-weight: 900;
+      color: #ff2a5f;
+      letter-spacing: clamp(1px, 0.4vw, 3px);
+      text-shadow: 0 0 16px #ff2a5f;
+      line-height: 1.3;
+    }
+
+    .alarm-alert-time {
+      font-size: clamp(2rem, 8vw, 3rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px #ff2a5f;
+      letter-spacing: 2px;
+    }
+
+    /* Footer Credits */
+    .hud-footer {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      text-align: center;
+      padding: 16px 20px 24px;
+      font-size: clamp(0.6rem, 1.6vw, 0.68rem);
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      transition: opacity 0.4s ease;
+      line-height: 1.5;
+    }
+
+    .hud-footer a {
+      color: var(--neon-primary);
+      text-decoration: none;
+      transition: text-shadow 0.2s ease;
+    }
+
+    /* ==========================================================================
+       11. COMPREHENSIVE RESPONSIVE BREAKPOINTS (768px, 480px & 320px)
+       ========================================================================== */
+
+    /* TABLET & SMALL LAPTOP BREAKPOINT (<= 768px) */
+    @media (max-width: 768px) {
+      .hud-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px 6px;
+      }
+
+      .hud-brand {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .hud-telemetry {
+        order: 3;
+        width: 100%;
+        justify-content: space-around;
+        padding: 8px 12px;
+      }
+
+      .hud-actions {
+        order: 2;
+        width: 100%;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .clock-chassis {
+        padding: 24px 14px 20px;
+        border-radius: 18px;
+      }
+
+      .chassis-top-telemetry {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .chassis-quick-toggles {
+        justify-content: center;
+        width: 100%;
+      }
+
+      .dock-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .theme-selector-chips {
+        width: 100%;
+      }
+
+      .dock-alarm-strip {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .alarm-inputs-group {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .progress-telemetry-row {
+        flex-direction: column;
+        width: 100%;
+      }
+    }
+
+    /* MOBILE BREAKPOINT (<= 480px - iPhone 14, Galaxy, Pixel, etc.) */
+    @media (max-width: 480px) {
+      .main-viewport {
+        padding: 6px 6px 18px;
+      }
+
+      .hud-header {
+        padding: 8px 6px 4px;
+        gap: 10px;
+      }
+
+      .hud-brand {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .brand-text {
+        align-items: center;
+        text-align: center;
+      }
+
+      .brand-title {
+        font-size: 0.95rem;
+        letter-spacing: 1.5px;
+      }
+
+      .brand-status {
+        font-size: 0.58rem;
+        letter-spacing: 0.8px;
+        justify-content: center;
+      }
+
+      /* Compact mobile telemetry layout: 2x2 grid */
+      .hud-telemetry {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 8px;
+        border-radius: 14px;
+        padding: 8px 10px;
+        font-size: 0.65rem;
+        width: 100%;
+      }
+
+      .telemetry-item {
+        justify-content: center;
+      }
+
+      /* Responsive Tab Bar */
+      .hud-tabs {
+        width: 100%;
+        border-radius: 12px;
+        padding: 3px;
+        gap: 4px;
+      }
+
+      .hud-tab-btn {
+        padding: 8px 12px;
+        font-size: 0.72rem;
+      }
+
+      /* Clock Chassis on Mobile */
+      .clock-chassis {
+        padding: 14px 6px 14px;
+        border-radius: 14px;
+      }
+
+      .chassis-corner {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* Chassis Top Telemetry Stacks Vertically */
+      .chassis-top-telemetry {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .telemetry-tag {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .chassis-quick-toggles {
+        flex-direction: column;
+        width: 100%;
+        gap: 6px;
+      }
+
+      .cyber-badge-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .ampm-badge {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Digits & Digit Groups on Mobile */
+      .clock-display-row {
+        gap: 3px;
+      }
+
+      .digit-group {
+        padding: 6px 3px;
+        border-radius: 8px;
+      }
+
+      .group-label {
+        bottom: -14px;
+        font-size: 0.48rem;
+        letter-spacing: 0.8px;
+      }
+
+      /* World Clocks Stack into Column on Mobile */
+      .embedded-world-grid,
+      .world-clocks-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      /* Theme Switcher as Compact Bar */
+      .theme-selector-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+      }
+
+      .theme-chip {
+        flex: 1 1 calc(50% - 6px);
+        min-height: 44px;
+        padding: 6px 8px;
+        font-size: 0.68rem;
+        justify-content: center;
+      }
+
+      .custom-color-wrapper {
+        margin: 4px auto 0;
+      }
+
+      /* Alarm Controls Stack */
+      .alarm-inputs-group {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .cyber-time-picker {
+        width: 100%;
+        text-align: center;
+      }
+
+      .toggle-wrapper {
+        width: 100%;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+
+      /* Dock Selectors Stack */
+      .dock-selectors-group {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 10px;
+      }
+
+      .control-item {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .custom-select {
+        flex: 1;
+        max-width: 60%;
+      }
+
+      /* Stopwatch & Timer buttons stack vertically or in pairs */
+      .hud-controls-row {
+        gap: 8px;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .cyber-btn {
+        width: 100%;
+        padding: 12px 14px;
+        justify-content: center;
+      }
+    }
+
+    /* ULTRA-COMPACT MOBILE BREAKPOINT (<= 320px - iPhone SE, Small Handhelds) */
+    @media (max-width: 320px) {
+      .main-viewport {
+        padding: 4px 4px 14px;
+      }
+
+      .hud-header {
+        padding: 6px 4px 4px;
+      }
+
+      .brand-title {
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+      }
+
+      .clock-chassis {
+        padding: 12px 4px 12px;
+      }
+
+      .clock-display-row {
+        gap: 2px;
+      }
+
+      .digit-group {
+        padding: 4px 2px;
+      }
+
+      .digit-chars {
+        font-size: 1.25rem;
+      }
+
+      .colon-separator {
+        font-size: 1.05rem;
+        padding: 0 1px;
+      }
+
+      .ms-digits {
+        font-size: 0.68rem;
+      }
+
+      .ms-bar-track {
+        width: 18px;
+      }
+
+      .stopwatch-digits {
+        font-size: 1.45rem;
+      }
+
+      .theme-chip {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body data-theme="cyberpunk">
+
+  <!-- Fullscreen Alarm Screen Flash Overlay -->
+  <div class="alarm-flash-screen" id="alarm-flash-screen"></div>
+
+  <!-- Background Animated Digital Particle Dust Canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Moving 3D Perspective Retro Cyber Floor in Contained Box -->
+  <div class="cyber-floor-container">
+    <div class="cyber-floor-grid"></div>
+  </div>
+
+  <!-- Radial Atmospheric Neon Glow Core -->
+  <div class="ambient-radial-glow" id="ambient-glow"></div>
+
+  <!-- CRT Scanline Filter & Phosphor Vignette Overlay -->
+  <div class="crt-overlay" id="crt-screen"></div>
+  <div class="vignette-overlay"></div>
+
+  <!-- Floating Toast Notification -->
+  <div class="hud-toast" id="hud-toast">TOAST MESSAGE</div>
+
+  <!-- Floating Screensaver Exit Button -->
+  <button class="screensaver-exit-btn" id="btn-exit-screensaver">
+    ✕ EXIT SCREENSAVER
+  </button>
+
+  <!-- ==========================================================================
+       HEADER HUD & STATUS TELEMETRY
+       ========================================================================== -->
+  <header class="hud-header">
+    <div class="hud-brand">
+      <div class="hud-logo-icon" id="brand-logo" title="Neon Pulse Chronometer">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">NEON PULSE</span>
+        <span class="brand-status">
+          <span class="status-dot"></span> SYSTEM ONLINE // CHRONO 3.0
+        </span>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Stream -->
+    <div class="hud-telemetry">
+      <div class="telemetry-item">
+        <span>FPS:</span> <span class="val" id="hud-fps">60</span>
+      </div>
+      <div class="telemetry-item">
+        <span>TZ:</span> <span class="val" id="hud-timezone">UTC</span>
+      </div>
+      <div class="telemetry-item">
+        <span>THEME:</span> <span class="val" id="hud-theme-label">CYBERPUNK</span>
+      </div>
+      <div class="telemetry-item">
+        <span>ALARM:</span> <span class="val" id="hud-alarm-label">OFF</span>
+      </div>
+    </div>
+
+    <!-- Action Toolbar (Audio, Scanlines, Screensaver, Shortcuts) -->
+    <div class="hud-actions">
+      <!-- Audio Toggle with Animated EQ -->
+      <button class="icon-btn" id="btn-toggle-audio" data-tip="Sound FX & Cyber Hum (M)" aria-label="Toggle Sound Effects and Cyber Hum">
+        <div class="audio-eq-bars" id="audio-eq-indicator">
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+        </div>
+      </button>
+
+      <!-- Scanlines CRT Toggle -->
+      <button class="icon-btn active" id="btn-toggle-crt" data-tip="CRT Scanlines (C)" aria-label="Toggle CRT Scanlines">
+        <svg viewBox="0 0 24 24">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </button>
+
+      <!-- Screensaver Mode Button -->
+      <button class="icon-btn" id="btn-screensaver" data-tip="Screensaver Mode (F)" aria-label="Toggle Screensaver Mode">
+        <svg viewBox="0 0 24 24">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+
+      <!-- Keyboard Shortcuts Help -->
+      <button class="icon-btn" id="btn-open-help" data-tip="Shortcuts & Info (?)" aria-label="Open Shortcuts and Info">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN VIEWPORT: MODES & CHRONO CHASSIS
+       ========================================================================== -->
+  <main class="main-viewport">
+    
+    <!-- Mode Switcher Tabs -->
+    <nav class="hud-tabs" role="tablist" aria-label="Clock Modes">
+      <button class="hud-tab-btn active" data-view="clock" id="tab-clock" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Digital Clock</span>
+      </button>
+      <button class="hud-tab-btn" data-view="analog" id="tab-analog" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="12" y2="7"/><line x1="12" y1="12" x2="16" y2="12"/></svg>
+        <span>Analog Mode</span>
+      </button>
+      <button class="hud-tab-btn" data-view="stopwatch" id="tab-stopwatch" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/><path d="M10 2h4"/></svg>
+        <span>Stopwatch</span>
+      </button>
+      <button class="hud-tab-btn" data-view="timer" id="tab-timer" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 2v20"/><path d="M7 2v20"/><path d="M2 12h20"/></svg>
+        <span>Timer</span>
+      </button>
+      <button class="hud-tab-btn" data-view="world" id="tab-world" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span>World HUD</span>
+      </button>
+    </nav>
+
+    <!-- Main Chassis Housing -->
+    <div class="clock-chassis" id="clock-chassis">
+      <!-- Decorative Cyber Chamfer Corners -->
+      <div class="chassis-corner tl"></div>
+      <div class="chassis-corner tr"></div>
+      <div class="chassis-corner bl"></div>
+      <div class="chassis-corner br"></div>
+
+      <!-- Top Sub-Telemetry Header -->
+      <div class="chassis-top-telemetry">
+        <div class="telemetry-tag">
+          <span>SYNC:</span> <span id="top-sync-id" style="color:var(--neon-primary)">ATOMIC 0.00ms</span>
+        </div>
+
+        <div class="chassis-quick-toggles">
+          <!-- Analog / Digital Toggle Button -->
+          <button class="cyber-badge-btn" id="btn-toggle-analog" data-tip="Toggle Digital / Analog (A)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="label-toggle-analog">ANALOG MODE</span>
+          </button>
+
+          <!-- World Clocks Toggle Button -->
+          <button class="cyber-badge-btn active" id="btn-toggle-world-clocks" data-tip="Toggle World Clocks (W)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            <span id="label-toggle-world">WORLD [ON]</span>
+          </button>
+
+          <!-- Font Style Pill (Click to Cycle) -->
+          <button class="cyber-badge-btn" id="btn-cycle-font-badge" data-tip="Click digits or here to change font (S)">
+            <span>FONT:</span>
+            <span id="font-style-label" style="color:var(--neon-primary)">CYBER MONO</span>
+          </button>
+        </div>
+
+        <div class="chassis-quick-toggles">
+          <div id="ampm-indicator" class="ampm-badge">24H</div>
+          <div class="telemetry-tag">
+            <span>DAY:</span> <span id="top-doy" style="color:var(--neon-secondary)">323 / 365</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------------------------------------
+           VIEW 1: PRIMARY NEON DIGITAL CLOCK
+           ---------------------------------------------------------------------- -->
+      <div class="view-mode-container active" id="view-clock">
+        <div class="clock-stage">
+          
+          <!-- Primary Pulsing Neon Digits Row (Click to cycle 3 font styles) -->
+          <div class="pulse-engine" id="pulse-wrapper">
+            <div class="clock-display-row font-style-0" id="clock-display-row" title="Click digits to cycle font style">
+              
+              <!-- Hours Module -->
+              <div class="digit-group" id="group-hours">
+                <span class="digit-chars" id="clock-hours">12</span>
+                <span class="group-label">HRS</span>
+              </div>
+
+              <!-- Animated Neon Colon -->
+              <span class="colon-separator">:</span>
+
+              <!-- Minutes Module -->
+              <div class="digit-group" id="group-minutes">
+                <span class="digit-chars" id="clock-minutes">00</span>
+                <span class="group-label">MIN</span>
+              </div>
+
+              <!-- Animated Neon Colon -->
+              <span class="colon-separator">:</span>
+
+              <!-- Seconds Module -->
+              <div class="digit-group" id="group-seconds">
+                <span class="digit-chars" id="clock-seconds">00</span>
+                <span class="group-label">SEC</span>
+              </div>
+
+              <!-- Milliseconds Module -->
+              <div class="ms-container">
+                <span class="ms-digits" id="clock-millis">00</span>
+                <div class="ms-bar-track">
+                  <div class="ms-bar-fill" id="clock-millis-bar"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Glossy Wet Floor Reflection of Digits -->
+            <div class="reflection-container" aria-hidden="true">
+              <div class="clock-display-row font-style-0" id="clock-reflection-row">
+                <div class="digit-group"><span class="digit-chars" id="refl-hours">12</span></div>
+                <span class="colon-separator">:</span>
+                <div class="digit-group"><span class="digit-chars" id="refl-minutes">00</span></div>
+                <span class="colon-separator">:</span>
+                <div class="digit-group"><span class="digit-chars" id="refl-seconds">00</span></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Date & Calendar HUD Strip (Day Name in Neon Style) -->
+        <div class="hud-calendar-strip">
+          
+          <!-- Days of Week Pills -->
+          <div class="days-row" id="days-pills-row">
+            <span class="day-pill" data-day="0">SUN</span>
+            <span class="day-pill" data-day="1">MON</span>
+            <span class="day-pill" data-day="2">TUE</span>
+            <span class="day-pill" data-day="3">WED</span>
+            <span class="day-pill" data-day="4">THU</span>
+            <span class="day-pill" data-day="5">FRI</span>
+            <span class="day-pill" data-day="6">SAT</span>
+          </div>
+
+          <!-- Formatted Natural Date with Neon Day Name -->
+          <div class="formatted-date-row">
+            <span class="neon-day-name" id="date-weekday">THURSDAY</span>,
+            <span class="highlight-date" id="date-month-day">NOVEMBER 19</span>,
+            <span id="date-year">2026</span>
+          </div>
+
+          <!-- Chrono Progress Telemetry (Day Progress & Year Progress) -->
+          <div class="progress-telemetry-row">
+            <div class="telemetry-progress-box">
+              <div class="progress-info">
+                <span>DAY PROGRESS</span>
+                <span id="day-progress-val">50.0%</span>
+              </div>
+              <div class="progress-bar-rail">
+                <div class="progress-bar-fill" id="day-progress-fill"></div>
+              </div>
+            </div>
+            <div class="telemetry-progress-box">
+              <div class="progress-info">
+                <span>YEAR PROGRESS</span>
+                <span id="year-progress-val">88.5%</span>
+              </div>
+              <div class="progress-bar-rail">
+                <div class="progress-bar-fill" id="year-progress-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Embedded World Clocks (NY, London, Tokyo) - Toggleable -->
+          <div class="embedded-world-section" id="embedded-world-section">
+            <div class="embedded-world-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+              <span>GLOBAL SYNCHRONIZATION // NY • LONDON • TOKYO</span>
+            </div>
+            <div class="embedded-world-grid">
+              <!-- New York -->
+              <div class="mini-world-card" id="card-world-ny">
+                <div class="mini-wc-city">
+                  <span>NEW YORK</span>
+                  <span class="mini-wc-tag" id="ny-tag">EDT / GMT-4</span>
+                </div>
+                <div class="mini-wc-time" id="ny-time">--:--:--</div>
+                <div class="mini-wc-date" id="ny-date">---</div>
+              </div>
+              <!-- London -->
+              <div class="mini-world-card" id="card-world-london">
+                <div class="mini-wc-city">
+                  <span>LONDON</span>
+                  <span class="mini-wc-tag" id="london-tag">GMT / BST</span>
+                </div>
+                <div class="mini-wc-time" id="london-time">--:--:--</div>
+                <div class="mini-wc-date" id="london-date">---</div>
+              </div>
+              <!-- Tokyo -->
+              <div class="mini-world-card" id="card-world-tokyo">
+                <div class="mini-wc-city">
+                  <span>TOKYO</span>
+                  <span class="mini-wc-tag" id="tokyo-tag">JST / GMT+9</span>
+                </div>
+                <div class="mini-wc-time" id="tokyo-time">--:--:--</div>
+                <div class="mini-wc-date" id="tokyo-date">---</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ----------------------------------------------------------------------
+           VIEW 2: NEON ANALOG CLOCK MODE
+           ---------------------------------------------------------------------- -->
+      <div class="view-mode-container" id="view-analog">
+        <div class="analog-clock-container active" id="analog-clock-wrapper">
+          
+          <svg class="analog-svg" viewBox="0 0 400 400" id="analog-svg-dial">
+            <!-- Filter definitions for neon glowing hands -->
+            <defs>
+              <filter id="analog-neon-filter" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Outer Bezel Ring -->
+            <circle class="analog-bezel" cx="200" cy="200" r="185"/>
+            <!-- Concentric Cyber Rings -->
+            <circle class="analog-inner-ring" cx="200" cy="200" r="160"/>
+            <circle class="analog-center-radar" cx="200" cy="200" r="105"/>
+            <circle class="analog-center-radar" cx="200" cy="200" r="45"/>
+
+            <!-- Hour and Minute Ticks Group (generated via JS) -->
+            <g id="analog-dial-ticks"></g>
+            <g id="analog-dial-numerals"></g>
+
+            <!-- Hands -->
+            <!-- Hour Hand -->
+            <line class="analog-hand-hour" id="analog-hour-hand" x1="200" y1="200" x2="200" y2="110"/>
+            <!-- Minute Hand -->
+            <line class="analog-hand-minute" id="analog-min-hand" x1="200" y1="200" x2="200" y2="70"/>
+            <!-- Second Hand Tail -->
+            <line class="analog-hand-tail" id="analog-sec-tail" x1="200" y1="200" x2="200" y2="235"/>
+            <!-- Second Hand -->
+            <line class="analog-hand-second" id="analog-sec-hand" x1="200" y1="200" x2="200" y2="48"/>
+
+            <!-- Center Hub -->
+            <circle class="analog-hub-outer" cx="200" cy="200" r="9"/>
+            <circle class="analog-hub-inner" cx="200" cy="200" r="4"/>
+          </svg>
+
+          <!-- Analog Digital Readout sub-label -->
+          <div class="analog-digital-subtext">
+            <span id="analog-sub-time">12:00:00</span>
+            <span id="analog-sub-ampm" class="ampm-badge">24H</span>
+          </div>
+
+          <div style="font-size:0.75rem; color:var(--text-dim); letter-spacing:2px; margin-top:8px; text-align:center;">
+            <span id="analog-date-label">THURSDAY, NOVEMBER 19, 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------------------------------------
+           VIEW 3: CYBER STOPWATCH (Built-in Neon Stopwatch)
+           ---------------------------------------------------------------------- -->
+      <div class="view-mode-container" id="view-stopwatch">
+        <div class="stopwatch-digits" id="sw-display">00:00:00.00</div>
+
+        <div class="hud-controls-row">
+          <button class="cyber-btn btn-primary" id="sw-btn-start">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="sw-btn-start-label">Start</span>
+          </button>
+          <button class="cyber-btn" id="sw-btn-lap">
+            <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            Lap
+          </button>
+          <button class="cyber-btn btn-danger" id="sw-btn-reset">
+            <svg viewBox="0 0 24 24"><path d="M2.5 2v6h6M21.5 22v-6h-6"/><path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+            Reset
+          </button>
+        </div>
+
+        <div class="laps-container" id="sw-laps-box">
+          <div class="lap-item" style="color:var(--text-muted); justify-content:center;">No laps recorded</div>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------------------------------------
+           VIEW 4: CYBER COUNTDOWN TIMER
+           ---------------------------------------------------------------------- -->
+      <div class="view-mode-container" id="view-timer">
+        
+        <!-- Preset Minutes -->
+        <div class="timer-presets">
+          <button class="preset-pill active" data-time="60">1 MIN</button>
+          <button class="preset-pill" data-time="300">5 MIN</button>
+          <button class="preset-pill" data-time="600">10 MIN</button>
+          <button class="preset-pill" data-time="900">15 MIN</button>
+          <button class="preset-pill" data-time="1500">25 MIN (POMODORO)</button>
+        </div>
+
+        <!-- Circular Glowing Gauge -->
+        <div class="timer-ring-container">
+          <svg class="timer-svg-ring" viewBox="0 0 240 240">
+            <circle class="timer-circle-bg" cx="120" cy="120" r="110"/>
+            <circle class="timer-circle-bar" id="timer-progress-ring" cx="120" cy="120" r="110"/>
+          </svg>
+          <div class="timer-center-content">
+            <div class="timer-display" id="tmr-display">01:00</div>
+            <span style="font-size:0.65rem; color:var(--text-muted); letter-spacing:2px;">REMAINING</span>
+          </div>
+        </div>
+
+        <!-- Timer Action Buttons -->
+        <div class="hud-controls-row">
+          <button class="cyber-btn btn-primary" id="tmr-btn-start">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="tmr-btn-start-label">Start</span>
+          </button>
+          <button class="cyber-btn btn-danger" id="tmr-btn-reset">
+            <svg viewBox="0 0 24 24"><path d="M2.5 2v6h6M21.5 22v-6h-6"/><path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------------------------------------
+           VIEW 5: FULL WORLD TIME HUD
+           ---------------------------------------------------------------------- -->
+      <div class="view-mode-container" id="view-world">
+        <div class="world-clocks-grid" id="world-clocks-container">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       MASTER CONTROL PANEL DOCK (THEMES, ALARM, PULSE, GLOW)
+       ========================================================================== -->
+  <aside class="control-dock">
+    
+    <!-- Row 1: 5 Required Themes + Auto Spectrum + Custom Color -->
+    <div class="dock-row">
+      <div class="dock-section-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/>
+        </svg>
+        Theme Switcher
+      </div>
+
+      <div class="theme-selector-chips">
+        <!-- 1. Cyberpunk (pink/cyan) -->
+        <button class="theme-chip active" data-theme="cyberpunk" title="Cyberpunk: Pink & Cyan Neon">
+          <span class="theme-color-dot" style="background: linear-gradient(135deg, #00ffcc 50%, #ff007f 50%);"></span>
+          Cyberpunk
+        </button>
+
+        <!-- 2. Matrix (green) -->
+        <button class="theme-chip" data-theme="matrix" title="Matrix: Phosphor Green">
+          <span class="theme-color-dot" style="background: linear-gradient(135deg, #00ff66 50%, #15ff00 50%);"></span>
+          Matrix
+        </button>
+
+        <!-- 3. Sunset (orange/purple) -->
+        <button class="theme-chip" data-theme="sunset" title="Sunset: Neon Orange & Purple">
+          <span class="theme-color-dot" style="background: linear-gradient(135deg, #ff7b00 50%, #9d4edd 50%);"></span>
+          Sunset
+        </button>
+
+        <!-- 4. Arctic (white/blue) -->
+        <button class="theme-chip" data-theme="arctic" title="Arctic: Glacial White & Ice Blue">
+          <span class="theme-color-dot" style="background: linear-gradient(135deg, #ffffff 50%, #00b4d8 50%);"></span>
+          Arctic
+        </button>
+
+        <!-- 5. Vapor (pink/purple pastel) -->
+        <button class="theme-chip" data-theme="vapor" title="Vapor: Pastel Pink & Lavender">
+          <span class="theme-color-dot" style="background: linear-gradient(135deg, #ff70a6 50%, #b388eb 50%);"></span>
+          Vapor
+        </button>
+
+        <!-- Spectrum Auto Shift -->
+        <button class="theme-chip" data-theme="auto" title="Spectrum Shift (Auto-Cycling Rainbow)">
+          <span class="theme-color-dot" style="background: conic-gradient(from 0deg, #00ffcc, #ff007f, #00ff88, #ffb703, #00ffcc);"></span>
+          Spectrum
+        </button>
+
+        <!-- Custom Color Picker -->
+        <div class="custom-color-wrapper" title="Pick Custom Neon Hue">
+          <input type="color" class="custom-color-input" id="custom-color-picker" value="#00ffcc" aria-label="Custom Theme Color Picker">
+          <div class="custom-color-chip"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Alarm Master Control Strip -->
+    <div class="dock-alarm-strip">
+      <div class="dock-section-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        Neon Alarm Engine
+      </div>
+
+      <div class="alarm-inputs-group">
+        <label for="alarm-time-input" style="font-size:0.7rem; color:var(--text-dim); letter-spacing:1px;">SET TIME:</label>
+        <input type="time" id="alarm-time-input" class="cyber-time-picker" value="08:00" aria-label="Alarm Time">
+
+        <!-- Quick Alarm Presets -->
+        <div style="display:flex; gap:8px; flex:1 1 auto;">
+          <button class="alarm-preset-btn" id="btn-alarm-now1" style="flex:1;">+1 MIN</button>
+          <button class="alarm-preset-btn" id="btn-alarm-now5" style="flex:1;">+5 MIN</button>
+        </div>
+
+        <!-- Alarm Enable/Disable Toggle -->
+        <div class="toggle-wrapper" id="toggle-alarm-armed" role="switch" aria-checked="false" tabindex="0">
+          <div class="cyber-toggle"></div>
+          <span style="font-size:0.72rem; letter-spacing:1.5px;" id="alarm-toggle-status">ALARM: OFF</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Pulse Engine, Glow Intensity, 12H/24H, Dust FX -->
+    <div class="dock-row">
+      <div class="dock-selectors-group">
+        
+        <!-- Pulse Mode -->
+        <div class="control-item">
+          <span>PULSE:</span>
+          <select class="custom-select" id="select-pulse-mode" aria-label="Pulse Rhythm Mode">
+            <option value="pulse-mode-heartbeat">Heartbeat (60 BPM)</option>
+            <option value="pulse-mode-synthwave">Synthwave (120 BPM)</option>
+            <option value="pulse-mode-breathe" selected>Deep Breath</option>
+            <option value="pulse-mode-hyper">Hyper Frequency</option>
+            <option value="pulse-mode-solid">Solid (No Pulse)</option>
+          </select>
+        </div>
+
+        <!-- Glow Spread Slider -->
+        <div class="control-item slider-control">
+          <span>GLOW:</span>
+          <input type="range" class="cyber-slider" id="slider-glow" min="0.4" max="2" step="0.1" value="1" aria-label="Neon Glow Spread Multiplier">
+        </div>
+
+      </div>
+
+      <div class="dock-selectors-group">
+        
+        <!-- 12H / 24H Toggle -->
+        <div class="toggle-wrapper active" id="toggle-hour-format" role="switch" aria-checked="true" tabindex="0">
+          <div class="cyber-toggle"></div>
+          <span style="font-size:0.72rem; letter-spacing:1.5px;" id="hour-format-label">24-HOUR</span>
+        </div>
+
+        <!-- Particles Active Toggle -->
+        <div class="toggle-wrapper active" id="toggle-particles" role="switch" aria-checked="true" tabindex="0">
+          <div class="cyber-toggle"></div>
+          <span style="font-size:0.72rem; letter-spacing:1.5px;">DUST FX</span>
+        </div>
+
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ==========================================================================
+       KEYBOARD SHORTCUTS & SYSTEM INFO MODAL
+       ========================================================================== -->
+  <div class="modal-backdrop" id="shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" id="btn-close-modal" aria-label="Close Shortcuts Modal">&times;</button>
+      <div class="modal-title" id="shortcuts-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-primary)" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+        </svg>
+        SYSTEM MANUAL // SHORTCUTS
+      </div>
+
+      <div class="shortcuts-list">
+        <div class="shortcut-row">
+          <span>Click Digits / Key S</span>
+          <span class="kbd-chip">S / CLICK DIGITS</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Toggle Analog Mode</span>
+          <span class="kbd-chip">A</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Toggle World Clocks (NY, London, Tokyo)</span>
+          <span class="kbd-chip">W</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Toggle Screensaver / Fullscreen</span>
+          <span class="kbd-chip">F</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Cycle Themes (Cyberpunk, Matrix, Sunset...)</span>
+          <span class="kbd-chip">T</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Toggle 12h / 24h Clock</span>
+          <span class="kbd-chip">H</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Toggle Audio & Cyber Hum</span>
+          <span class="kbd-chip">M</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Toggle CRT Scanlines</span>
+          <span class="kbd-chip">C</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Cycle Pulse Rhythm Modes</span>
+          <span class="kbd-chip">P</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Switch HUD Views (Clock/Analog/Stopwatch/Timer/World)</span>
+          <span class="kbd-chip">1 - 5</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Stopwatch / Timer Start & Pause / Dismiss Alarm</span>
+          <span class="kbd-chip">SPACE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       ALARM TRIGGERED POPUP DIALOG
+       ========================================================================== -->
+  <div class="modal-backdrop" id="alarm-trigger-modal" role="alertdialog" aria-modal="true" aria-labelledby="alarm-modal-title">
+    <div class="alarm-alert-card">
+      <div class="alarm-alert-title" id="alarm-modal-title">⚠️ SYSTEM ALERT // ALARM REACHED ⚠️</div>
+      <div class="alarm-alert-time" id="alarm-triggered-time">08:00</div>
+      <div style="font-size:0.75rem; color:var(--text-bright); letter-spacing:2px; text-align:center;">
+        SCHEDULED CHRONO SIGNAL TRIGGERED
+      </div>
+      <button class="cyber-btn btn-danger" id="btn-dismiss-alarm" style="margin-top:10px; padding:14px 34px;">
+        DISMISS ALARM
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Footer Credits -->
+  <footer class="hud-footer">
+    NEON PULSE CHRONO // CRAFTED WITH PURE HTML5 + CSS3 + JS // ZERO DEPENDENCIES
+  </footer>
+
+  <!-- ==========================================================================
+       12. JAVASCRIPT CONTROLLER: COMPLETE PRODUCTION ENGINE WITH TOUCH SUPPORT
+       ========================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ------------------------------------------------------------------------
+       * STATE MANAGEMENT
+       * ------------------------------------------------------------------------ */
+      const state = {
+        is24Hour: true,
+        currentView: 'clock', // 'clock' | 'analog' | 'stopwatch' | 'timer' | 'world'
+        isAnalogActive: false,
+        worldClocksVisible: true,
+        fontStyleIndex: 0,    // 0: Cyber Mono, 1: Digital LED, 2: Neo Tech
+        theme: 'cyberpunk',   // 'cyberpunk' | 'matrix' | 'sunset' | 'arctic' | 'vapor' | 'auto' | 'custom'
+        customColor: '#00ffcc',
+        pulseMode: 'pulse-mode-breathe',
+        glowMultiplier: 1.0,
+        particlesEnabled: true,
+        crtEnabled: true,
+        audioEnabled: false,
+        spectrumHue: 170,     // Hue for auto spectrum shifting
+        screensaverMode: false,
+        screensaverIdleTimer: null,
+        
+        // Alarm State
+        alarm: {
+          armed: false,
+          time: '08:00',
+          triggered: false,
+          soundInterval: null
+        },
+
+        // Stopwatch State
+        stopwatch: {
+          running: false,
+          startTime: 0,
+          elapsedTime: 0,
+          timerId: null,
+          laps: []
+        },
+
+        // Timer State
+        timer: {
+          running: false,
+          totalSeconds: 60,
+          remainingSeconds: 60,
+          timerId: null
+        }
+      };
+
+      /* Font Style Metadata */
+      const FONT_STYLES = [
+        { id: 0, name: 'CYBER MONO', class: 'font-style-0' },
+        { id: 1, name: 'DIGITAL LED', class: 'font-style-1' },
+        { id: 2, name: 'NEO TECH', class: 'font-style-2' }
+      ];
+
+      /* Preset Neon Themes Definitions */
+      const THEMES = {
+        cyberpunk: {
+          name: 'CYBERPUNK',
+          primary: '#00ffcc',
+          secondary: '#ff007f',
+          glow: 'rgba(0, 255, 204, 0.5)',
+          glowSec: 'rgba(255, 0, 127, 0.4)'
+        },
+        matrix: {
+          name: 'MATRIX',
+          primary: '#00ff66',
+          secondary: '#15ff00',
+          glow: 'rgba(0, 255, 102, 0.55)',
+          glowSec: 'rgba(21, 255, 0, 0.35)'
+        },
+        sunset: {
+          name: 'SUNSET',
+          primary: '#ff7b00',
+          secondary: '#9d4edd',
+          glow: 'rgba(255, 123, 0, 0.55)',
+          glowSec: 'rgba(157, 78, 221, 0.45)'
+        },
+        arctic: {
+          name: 'ARCTIC',
+          primary: '#ffffff',
+          secondary: '#00b4d8',
+          glow: 'rgba(224, 247, 250, 0.65)',
+          glowSec: 'rgba(0, 180, 216, 0.5)'
+        },
+        vapor: {
+          name: 'VAPOR',
+          primary: '#ff70a6',
+          secondary: '#b388eb',
+          glow: 'rgba(255, 112, 166, 0.55)',
+          glowSec: 'rgba(179, 136, 235, 0.45)'
+        }
+      };
+
+      /* ------------------------------------------------------------------------
+       * DOM REPOSITORY
+       * ------------------------------------------------------------------------ */
+      const dom = {
+        // Digital Clock Displays
+        clockHours: document.getElementById('clock-hours'),
+        clockMinutes: document.getElementById('clock-minutes'),
+        clockSeconds: document.getElementById('clock-seconds'),
+        clockMillis: document.getElementById('clock-millis'),
+        clockMillisBar: document.getElementById('clock-millis-bar'),
+        clockDisplayRow: document.getElementById('clock-display-row'),
+        reflHours: document.getElementById('refl-hours'),
+        reflMinutes: document.getElementById('refl-minutes'),
+        reflSeconds: document.getElementById('refl-seconds'),
+        clockReflectionRow: document.getElementById('clock-reflection-row'),
+        ampmIndicator: document.getElementById('ampm-indicator'),
+        pulseWrapper: document.getElementById('pulse-wrapper'),
+        ambientGlow: document.getElementById('ambient-glow'),
+        
+        // Analog Mode
+        viewAnalog: document.getElementById('view-analog'),
+        analogHourHand: document.getElementById('analog-hour-hand'),
+        analogMinHand: document.getElementById('analog-min-hand'),
+        analogSecHand: document.getElementById('analog-sec-hand'),
+        analogSecTail: document.getElementById('analog-sec-tail'),
+        analogSubTime: document.getElementById('analog-sub-time'),
+        analogSubAmpm: document.getElementById('analog-sub-ampm'),
+        analogDateLabel: document.getElementById('analog-date-label'),
+        btnToggleAnalog: document.getElementById('btn-toggle-analog'),
+        labelToggleAnalog: document.getElementById('label-toggle-analog'),
+        analogDialTicks: document.getElementById('analog-dial-ticks'),
+        analogDialNumerals: document.getElementById('analog-dial-numerals'),
+
+        // Font Style Elements
+        btnCycleFontBadge: document.getElementById('btn-cycle-font-badge'),
+        fontStyleLabel: document.getElementById('font-style-label'),
+        
+        // Date & Progress
+        daysPills: document.querySelectorAll('.day-pill'),
+        dateWeekday: document.getElementById('date-weekday'),
+        dateMonthDay: document.getElementById('date-month-day'),
+        dateYear: document.getElementById('date-year'),
+        dayProgressVal: document.getElementById('day-progress-val'),
+        dayProgressFill: document.getElementById('day-progress-fill'),
+        yearProgressVal: document.getElementById('year-progress-val'),
+        yearProgressFill: document.getElementById('year-progress-fill'),
+        topDoy: document.getElementById('top-doy'),
+        topSyncId: document.getElementById('top-sync-id'),
+        
+        // World Clocks Embedded & Dedicated
+        embeddedWorldSection: document.getElementById('embedded-world-section'),
+        btnToggleWorldClocks: document.getElementById('btn-toggle-world-clocks'),
+        labelToggleWorld: document.getElementById('label-toggle-world'),
+        nyTime: document.getElementById('ny-time'),
+        nyDate: document.getElementById('ny-date'),
+        londonTime: document.getElementById('london-time'),
+        londonDate: document.getElementById('london-date'),
+        tokyoTime: document.getElementById('tokyo-time'),
+        tokyoDate: document.getElementById('tokyo-date'),
+        worldClocksContainer: document.getElementById('world-clocks-container'),
+
+        // Alarm Elements
+        alarmFlashScreen: document.getElementById('alarm-flash-screen'),
+        alarmTimeInput: document.getElementById('alarm-time-input'),
+        btnAlarmNow1: document.getElementById('btn-alarm-now1'),
+        btnAlarmNow5: document.getElementById('btn-alarm-now5'),
+        toggleAlarmArmed: document.getElementById('toggle-alarm-armed'),
+        alarmToggleStatus: document.getElementById('alarm-toggle-status'),
+        hudAlarmLabel: document.getElementById('hud-alarm-label'),
+        alarmTriggerModal: document.getElementById('alarm-trigger-modal'),
+        alarmTriggeredTime: document.getElementById('alarm-triggered-time'),
+        btnDismissAlarm: document.getElementById('btn-dismiss-alarm'),
+
+        // Header Telemetry
+        hudFps: document.getElementById('hud-fps'),
+        hudTimezone: document.getElementById('hud-timezone'),
+        hudThemeLabel: document.getElementById('hud-theme-label'),
+        audioEqIndicator: document.getElementById('audio-eq-indicator'),
+        hudToast: document.getElementById('hud-toast'),
+        
+        // Views & Tabs
+        tabs: document.querySelectorAll('.hud-tab-btn'),
+        viewClock: document.getElementById('view-clock'),
+        viewStopwatch: document.getElementById('view-stopwatch'),
+        viewTimer: document.getElementById('view-timer'),
+        viewWorld: document.getElementById('view-world'),
+        
+        // Stopwatch
+        swDisplay: document.getElementById('sw-display'),
+        swBtnStart: document.getElementById('sw-btn-start'),
+        swBtnStartLabel: document.getElementById('sw-btn-start-label'),
+        swBtnLap: document.getElementById('sw-btn-lap'),
+        swBtnReset: document.getElementById('sw-btn-reset'),
+        swLapsBox: document.getElementById('sw-laps-box'),
+
+        // Timer
+        tmrDisplay: document.getElementById('tmr-display'),
+        tmrRing: document.getElementById('timer-progress-ring'),
+        tmrBtnStart: document.getElementById('tmr-btn-start'),
+        tmrBtnStartLabel: document.getElementById('tmr-btn-start-label'),
+        tmrBtnReset: document.getElementById('tmr-btn-reset'),
+        tmrPresets: document.querySelectorAll('.preset-pill'),
+
+        // Controls
+        themeChips: document.querySelectorAll('.theme-chip'),
+        customColorPicker: document.getElementById('custom-color-picker'),
+        selectPulseMode: document.getElementById('select-pulse-mode'),
+        sliderGlow: document.getElementById('slider-glow'),
+        toggleHourFormat: document.getElementById('toggle-hour-format'),
+        hourFormatLabel: document.getElementById('hour-format-label'),
+        toggleParticles: document.getElementById('toggle-particles'),
+        crtScreen: document.getElementById('crt-screen'),
+        
+        // Buttons
+        btnToggleAudio: document.getElementById('btn-toggle-audio'),
+        btnToggleCrt: document.getElementById('btn-toggle-crt'),
+        btnScreensaver: document.getElementById('btn-screensaver'),
+        btnExitScreensaver: document.getElementById('btn-exit-screensaver'),
+        btnOpenHelp: document.getElementById('btn-open-help'),
+        btnCloseModal: document.getElementById('btn-close-modal'),
+        shortcutsModal: document.getElementById('shortcuts-modal'),
+        brandLogo: document.getElementById('brand-logo'),
+        
+        // Canvas
+        canvas: document.getElementById('particle-canvas')
+      };
+
+      /* ------------------------------------------------------------------------
+       * TOAST NOTIFICATION UTILITY
+       * ------------------------------------------------------------------------ */
+      let toastTimer = null;
+      function showToast(message) {
+        if (!dom.hudToast) return;
+        dom.hudToast.textContent = message;
+        dom.hudToast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          dom.hudToast.classList.remove('show');
+        }, 2200);
+      }
+
+      /* ------------------------------------------------------------------------
+       * PURE WEB AUDIO API SYNTHESIZER (Zero external dependencies)
+       * ------------------------------------------------------------------------ */
+      let audioCtx = null;
+      let ambientDroneOsc = null;
+      let ambientDroneGain = null;
+
+      function initAudioContext() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      /** Futuristic Click Blip */
+      function playBlipSound(freq = 880, type = 'sine', duration = 0.04) {
+        if (!state.audioEnabled && !state.alarm.triggered) return;
+        initAudioContext();
+        if (!audioCtx) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + duration);
+          
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      /** Ambient Cyber Reactor Hum Loop */
+      function toggleAmbientDrone(enable) {
+        initAudioContext();
+        if (!audioCtx) return;
+        if (enable) {
+          if (!ambientDroneOsc) {
+            try {
+              ambientDroneOsc = audioCtx.createOscillator();
+              const filter = audioCtx.createBiquadFilter();
+              ambientDroneGain = audioCtx.createGain();
+
+              ambientDroneOsc.type = 'sawtooth';
+              ambientDroneOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // 55Hz Low Sub A
+
+              filter.type = 'lowpass';
+              filter.frequency.setValueAtTime(120, audioCtx.currentTime);
+
+              ambientDroneGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+              ambientDroneGain.gain.exponentialRampToValueAtTime(0.02, audioCtx.currentTime + 1.5);
+
+              ambientDroneOsc.connect(filter);
+              filter.connect(ambientDroneGain);
+              ambientDroneGain.connect(audioCtx.destination);
+
+              ambientDroneOsc.start();
+            } catch (e) {
+              ambientDroneOsc = null;
+            }
+          }
+        } else {
+          if (ambientDroneGain) {
+            try {
+              ambientDroneGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+              setTimeout(() => {
+                if (ambientDroneOsc) {
+                  ambientDroneOsc.stop();
+                  ambientDroneOsc.disconnect();
+                  ambientDroneOsc = null;
+                }
+              }, 350);
+            } catch (e) {
+              ambientDroneOsc = null;
+            }
+          }
+        }
+      }
+
+      /** Timer Finish Alarm Chime */
+      function playTimerFinishChime() {
+        if (!audioCtx) initAudioContext();
+        if (!audioCtx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            playBlipSound(freq, 'triangle', 0.25);
+          }, idx * 120);
+        });
+      }
+
+      /** LOUD WEB AUDIO ALARM BEEPER */
+      function startAlarmBeeper() {
+        initAudioContext();
+        if (!audioCtx) return;
+        stopAlarmBeeper();
+
+        function emitBeepPattern() {
+          if (!audioCtx) return;
+          try {
+            const now = audioCtx.currentTime;
+            [0, 0.14, 0.28, 0.42].forEach((offset, idx) => {
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+              osc.frequency.setValueAtTime(idx % 2 === 0 ? 980 : 1320, now + offset);
+              gain.gain.setValueAtTime(0.22, now + offset);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.09);
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              osc.start(now + offset);
+              osc.stop(now + offset + 0.09);
+            });
+          } catch (e) {}
+        }
+
+        emitBeepPattern();
+        state.alarm.soundInterval = setInterval(emitBeepPattern, 750);
+      }
+
+      function stopAlarmBeeper() {
+        if (state.alarm.soundInterval) {
+          clearInterval(state.alarm.soundInterval);
+          state.alarm.soundInterval = null;
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * THEME CONTROLLER (5 Explicit Themes + Auto Spectrum + Custom)
+       * ------------------------------------------------------------------------ */
+      function applyThemeProperties(primary, secondary, glow, glowSec) {
+        const root = document.documentElement;
+        root.style.setProperty('--neon-primary', primary);
+        root.style.setProperty('--neon-secondary', secondary);
+        root.style.setProperty('--neon-glow', glow);
+        root.style.setProperty('--neon-glow-secondary', glowSec);
+        root.style.setProperty('--border-neon', glow);
+      }
+
+      function setTheme(themeKey) {
+        state.theme = themeKey;
+        document.body.setAttribute('data-theme', themeKey);
+
+        dom.themeChips.forEach(chip => {
+          chip.classList.toggle('active', chip.getAttribute('data-theme') === themeKey);
+        });
+
+        if (themeKey === 'auto') {
+          dom.hudThemeLabel.textContent = 'SPECTRUM';
+          showToast('THEME: AUTO SPECTRUM');
+        } else if (themeKey === 'custom') {
+          dom.hudThemeLabel.textContent = 'CUSTOM';
+          applyThemeProperties(state.customColor, '#ff007f', `${state.customColor}66`, 'rgba(255, 0, 127, 0.35)');
+          showToast('THEME: CUSTOM HUE');
+        } else {
+          const cfg = THEMES[themeKey];
+          if (cfg) {
+            dom.hudThemeLabel.textContent = cfg.name;
+            applyThemeProperties(cfg.primary, cfg.secondary, cfg.glow, cfg.glowSec);
+            showToast(`THEME: ${cfg.name}`);
+          }
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * FONT STYLE CYCLER (3 DISTINCT CYBER FONT STYLES)
+       * ------------------------------------------------------------------------ */
+      function cycleFontStyle() {
+        playBlipSound(1050);
+        state.fontStyleIndex = (state.fontStyleIndex + 1) % FONT_STYLES.length;
+        const currentStyle = FONT_STYLES[state.fontStyleIndex];
+
+        // Apply class to main digital display row and floor reflection
+        FONT_STYLES.forEach(s => {
+          dom.clockDisplayRow.classList.remove(s.class);
+          dom.clockReflectionRow.classList.remove(s.class);
+        });
+        dom.clockDisplayRow.classList.add(currentStyle.class);
+        dom.clockReflectionRow.classList.add(currentStyle.class);
+
+        dom.fontStyleLabel.textContent = currentStyle.name;
+        showToast(`FONT STYLE: ${currentStyle.name}`);
+      }
+
+      /* ------------------------------------------------------------------------
+       * ANALOG CLOCK BUILDER & TICKER
+       * ------------------------------------------------------------------------ */
+      function buildAnalogDial() {
+        dom.analogDialTicks.innerHTML = '';
+        dom.analogDialNumerals.innerHTML = '';
+
+        for (let i = 0; i < 60; i++) {
+          const angle = (i * 6) * (Math.PI / 180);
+          const isHour = i % 5 === 0;
+          const r1 = isHour ? 152 : 162;
+          const r2 = 172;
+
+          const x1 = 200 + r1 * Math.sin(angle);
+          const y1 = 200 - r1 * Math.cos(angle);
+          const x2 = 200 + r2 * Math.sin(angle);
+          const y2 = 200 - r2 * Math.cos(angle);
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', x1);
+          line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2);
+          line.setAttribute('y2', y2);
+          line.setAttribute('class', isHour ? 'analog-hour-mark' : 'analog-min-mark');
+          dom.analogDialTicks.appendChild(line);
+
+          if (isHour) {
+            const hourNum = i === 0 ? 12 : i / 5;
+            const textR = 135;
+            const tx = 200 + textR * Math.sin(angle);
+            const ty = 200 - textR * Math.cos(angle);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', tx);
+            text.setAttribute('y', ty);
+            text.setAttribute('class', 'analog-numeral');
+            text.textContent = hourNum;
+            dom.analogDialNumerals.appendChild(text);
+          }
+        }
+      }
+
+      function updateAnalogClock(now) {
+        if (!state.isAnalogActive && state.currentView !== 'analog') return;
+
+        const ms = now.getMilliseconds();
+        const seconds = now.getSeconds() + ms / 1000;
+        const minutes = now.getMinutes() + seconds / 60;
+        const hours = (now.getHours() % 12) + minutes / 60;
+
+        const degS = seconds * 6;
+        const degM = minutes * 6;
+        const degH = hours * 30;
+
+        dom.analogHourHand.setAttribute('transform', `rotate(${degH} 200 200)`);
+        dom.analogMinHand.setAttribute('transform', `rotate(${degM} 200 200)`);
+        dom.analogSecHand.setAttribute('transform', `rotate(${degS} 200 200)`);
+        dom.analogSecTail.setAttribute('transform', `rotate(${degS} 200 200)`);
+
+        let dispH = now.getHours();
+        let ampm = '';
+        if (!state.is24Hour) {
+          ampm = dispH >= 12 ? 'PM' : 'AM';
+          dispH = dispH % 12 || 12;
+        }
+        dom.analogSubTime.textContent = `${padZero(dispH)}:${padZero(now.getMinutes())}:${padZero(now.getSeconds())}`;
+        dom.analogSubAmpm.textContent = state.is24Hour ? '24H' : ampm;
+        dom.analogDateLabel.textContent = `${DAY_NAMES[now.getDay()]}, ${MONTH_NAMES[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+      }
+
+      function toggleAnalogMode() {
+        playBlipSound(880);
+        state.isAnalogActive = !state.isAnalogActive;
+        dom.btnToggleAnalog.classList.toggle('active', state.isAnalogActive);
+        dom.labelToggleAnalog.textContent = state.isAnalogActive ? 'DIGITAL MODE' : 'ANALOG MODE';
+
+        if (state.isAnalogActive) {
+          switchView('analog');
+          showToast('ANALOG MODE ACTIVATED');
+        } else {
+          switchView('clock');
+          showToast('DIGITAL CLOCK ACTIVATED');
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * PRIMARY CLOCK TICKER
+       * ------------------------------------------------------------------------ */
+      const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+      const DAY_NAMES = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+      function padZero(num, len = 2) {
+        return String(num).padStart(len, '0');
+      }
+
+      function updateClock() {
+        const now = new Date();
+
+        let hours = now.getHours();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+        const millis = Math.floor(now.getMilliseconds() / 10); // 0 - 99
+
+        let ampm = '';
+        if (!state.is24Hour) {
+          ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12 || 12;
+          dom.ampmIndicator.textContent = ampm;
+          dom.ampmIndicator.classList.toggle('pm', ampm === 'PM');
+        } else {
+          dom.ampmIndicator.textContent = '24H';
+          dom.ampmIndicator.classList.remove('pm');
+        }
+
+        const hStr = padZero(hours);
+        const mStr = padZero(minutes);
+        const sStr = padZero(seconds);
+        const msStr = padZero(millis);
+
+        // Update Digits
+        dom.clockHours.textContent = hStr;
+        dom.clockMinutes.textContent = mStr;
+        dom.clockSeconds.textContent = sStr;
+        dom.clockMillis.textContent = msStr;
+        dom.clockMillisBar.style.width = `${millis}%`;
+
+        // Update Floor Reflection
+        dom.reflHours.textContent = hStr;
+        dom.reflMinutes.textContent = mStr;
+        dom.reflSeconds.textContent = sStr;
+
+        // Update Day Pills
+        const currentDayIndex = now.getDay();
+        dom.daysPills.forEach(pill => {
+          const day = parseInt(pill.getAttribute('data-day'), 10);
+          pill.classList.toggle('active', day === currentDayIndex);
+        });
+
+        // Update Full Date Strings (Neon Day Name)
+        dom.dateWeekday.textContent = DAY_NAMES[currentDayIndex];
+        dom.dateMonthDay.textContent = `${MONTH_NAMES[now.getMonth()]} ${now.getDate()}`;
+        dom.dateYear.textContent = now.getFullYear();
+
+        // Calculate Day of Year & Progress
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const diffDays = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+        const totalYearDays = ((now.getFullYear() % 4 === 0 && now.getFullYear() % 100 !== 0) || now.getFullYear() % 400 === 0) ? 366 : 365;
+        dom.topDoy.textContent = `${diffDays} / ${totalYearDays}`;
+
+        // Day percentage progress
+        const daySeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+        const dayPct = ((daySeconds / 86400) * 100).toFixed(1);
+        dom.dayProgressVal.textContent = `${dayPct}%`;
+        dom.dayProgressFill.style.width = `${dayPct}%`;
+
+        // Year percentage progress
+        const yearPct = ((diffDays / totalYearDays) * 100).toFixed(1);
+        dom.yearProgressVal.textContent = `${yearPct}%`;
+        dom.yearProgressFill.style.width = `${yearPct}%`;
+
+        // Update Analog Clock if visible
+        updateAnalogClock(now);
+
+        // Check Alarm Condition
+        checkAlarm(now);
+      }
+
+      /* ------------------------------------------------------------------------
+       * WORLD CLOCKS: NY, LONDON, TOKYO + DEDICATED WORLD VIEW
+       * ------------------------------------------------------------------------ */
+      const WORLD_CITIES = [
+        { name: 'UTC // ZULU', tz: 'UTC', offset: 'GMT 0' },
+        { name: 'NEW YORK', tz: 'America/New_York', offset: 'GMT -4/-5' },
+        { name: 'LONDON', tz: 'Europe/London', offset: 'GMT 0/+1' },
+        { name: 'TOKYO', tz: 'Asia/Tokyo', offset: 'GMT +9' },
+        { name: 'SAN FRANCISCO', tz: 'America/Los_Angeles', offset: 'GMT -7/-8' },
+        { name: 'SYDNEY', tz: 'Australia/Sydney', offset: 'GMT +10/+11' }
+      ];
+
+      function buildDedicatedWorldClocks() {
+        dom.worldClocksContainer.innerHTML = '';
+        WORLD_CITIES.forEach(city => {
+          const card = document.createElement('div');
+          card.className = 'world-clock-card';
+          const safeId = city.name.replace(/[^a-zA-Z]/g, '');
+          card.innerHTML = `
+            <div class="wc-city">
+              <span>${city.name}</span>
+              <span class="wc-offset">${city.offset}</span>
+            </div>
+            <div class="wc-time" id="wc-time-${safeId}">--:--:--</div>
+            <div class="wc-date" id="wc-date-${safeId}">---</div>
+          `;
+          dom.worldClocksContainer.appendChild(card);
+        });
+      }
+
+      function updateWorldClocks() {
+        const now = new Date();
+
+        const formatOptions = {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: !state.is24Hour
+        };
+        const dateOptions = {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        };
+
+        try {
+          // New York
+          dom.nyTime.textContent = new Intl.DateTimeFormat('en-US', { ...formatOptions, timeZone: 'America/New_York' }).format(now);
+          dom.nyDate.textContent = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: 'America/New_York' }).format(now).toUpperCase();
+
+          // London
+          dom.londonTime.textContent = new Intl.DateTimeFormat('en-US', { ...formatOptions, timeZone: 'Europe/London' }).format(now);
+          dom.londonDate.textContent = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: 'Europe/London' }).format(now).toUpperCase();
+
+          // Tokyo
+          dom.tokyoTime.textContent = new Intl.DateTimeFormat('en-US', { ...formatOptions, timeZone: 'Asia/Tokyo' }).format(now);
+          dom.tokyoDate.textContent = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: 'Asia/Tokyo' }).format(now).toUpperCase();
+        } catch (e) {}
+
+        if (state.currentView === 'world') {
+          WORLD_CITIES.forEach(city => {
+            const safeId = city.name.replace(/[^a-zA-Z]/g, '');
+            const timeEl = document.getElementById(`wc-time-${safeId}`);
+            const dateEl = document.getElementById(`wc-date-${safeId}`);
+            if (!timeEl || !dateEl) return;
+
+            try {
+              timeEl.textContent = new Intl.DateTimeFormat('en-US', { ...formatOptions, timeZone: city.tz }).format(now);
+              dateEl.textContent = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: city.tz }).format(now).toUpperCase();
+            } catch (e) {}
+          });
+        }
+      }
+
+      function toggleWorldClocks() {
+        playBlipSound(750);
+        state.worldClocksVisible = !state.worldClocksVisible;
+        dom.embeddedWorldSection.classList.toggle('hidden', !state.worldClocksVisible);
+        dom.btnToggleWorldClocks.classList.toggle('active', state.worldClocksVisible);
+        dom.labelToggleWorld.textContent = state.worldClocksVisible ? 'WORLD [ON]' : 'WORLD [OFF]';
+        showToast(state.worldClocksVisible ? 'WORLD CLOCKS: VISIBLE' : 'WORLD CLOCKS: HIDDEN');
+      }
+
+      /* ------------------------------------------------------------------------
+       * ALARM ENGINE (Screen Flashes + Web Audio Beep)
+       * ------------------------------------------------------------------------ */
+      function toggleAlarmArmed() {
+        playBlipSound(700);
+        state.alarm.armed = !state.alarm.armed;
+        state.alarm.time = dom.alarmTimeInput.value || '08:00';
+        state.alarm.triggered = false;
+
+        dom.toggleAlarmArmed.classList.toggle('active', state.alarm.armed);
+        dom.toggleAlarmArmed.setAttribute('aria-checked', state.alarm.armed ? 'true' : 'false');
+        dom.alarmToggleStatus.textContent = state.alarm.armed ? `ALARM: [${state.alarm.time}]` : 'ALARM: OFF';
+        dom.hudAlarmLabel.textContent = state.alarm.armed ? state.alarm.time : 'OFF';
+
+        showToast(state.alarm.armed ? `ALARM ARMED FOR ${state.alarm.time}` : 'ALARM DISARMED');
+      }
+
+      function checkAlarm(now) {
+        if (!state.alarm.armed || state.alarm.triggered) return;
+
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+        const [alarmHour, alarmMin] = state.alarm.time.split(':').map(Number);
+
+        if (currentHour === alarmHour && currentMin === alarmMin && now.getSeconds() === 0) {
+          triggerAlarm();
+        }
+      }
+
+      function triggerAlarm() {
+        state.alarm.triggered = true;
+        initAudioContext();
+
+        dom.alarmFlashScreen.classList.add('active');
+        startAlarmBeeper();
+
+        dom.alarmTriggeredTime.textContent = state.alarm.time;
+        dom.alarmTriggerModal.classList.add('open');
+
+        showToast('⚠️ ALARM TRIGGERED! ⚠️');
+      }
+
+      function dismissAlarm() {
+        playBlipSound(600);
+        state.alarm.triggered = false;
+        state.alarm.armed = false;
+
+        dom.alarmFlashScreen.classList.remove('active');
+        stopAlarmBeeper();
+        dom.alarmTriggerModal.classList.remove('open');
+
+        dom.toggleAlarmArmed.classList.remove('active');
+        dom.toggleAlarmArmed.setAttribute('aria-checked', 'false');
+        dom.alarmToggleStatus.textContent = 'ALARM: OFF';
+        dom.hudAlarmLabel.textContent = 'OFF';
+
+        showToast('ALARM DISMISSED');
+      }
+
+      function setAlarmOffsetMinutes(offsetMinutes) {
+        playBlipSound(700);
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + offsetMinutes);
+        const newTime = `${padZero(now.getHours())}:${padZero(now.getMinutes())}`;
+        dom.alarmTimeInput.value = newTime;
+        state.alarm.time = newTime;
+        if (!state.alarm.armed) {
+          toggleAlarmArmed();
+        } else {
+          dom.alarmToggleStatus.textContent = `ALARM: [${newTime}]`;
+          dom.hudAlarmLabel.textContent = newTime;
+          showToast(`ALARM SET TO ${newTime}`);
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * SCREENSAVER MODE & FULLSCREEN
+       * ------------------------------------------------------------------------ */
+      function toggleScreensaver() {
+        playBlipSound(900);
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          enableScreensaverMode();
+        } else {
+          document.exitFullscreen().catch(() => {});
+          disableScreensaverMode();
+        }
+      }
+
+      function enableScreensaverMode() {
+        state.screensaverMode = true;
+        document.body.classList.add('screensaver-mode');
+        showToast('SCREENSAVER ACTIVE // MOVE TO RESTORE');
+      }
+
+      function disableScreensaverMode() {
+        state.screensaverMode = false;
+        document.body.classList.remove('screensaver-mode');
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+        showToast('SCREENSAVER EXITED');
+      }
+
+      /* ------------------------------------------------------------------------
+       * STOPWATCH ENGINE
+       * ------------------------------------------------------------------------ */
+      function formatStopwatchTime(ms) {
+        const totalHundredths = Math.floor(ms / 10);
+        const hundredths = totalHundredths % 100;
+        const totalSecs = Math.floor(ms / 1000);
+        const secs = totalSecs % 60;
+        const mins = Math.floor(totalSecs / 60) % 60;
+        const hours = Math.floor(totalSecs / 3600);
+
+        return `${padZero(hours)}:${padZero(mins)}:${padZero(secs)}.${padZero(hundredths)}`;
+      }
+
+      function toggleStopwatch() {
+        playBlipSound(700);
+        if (!state.stopwatch.running) {
+          state.stopwatch.running = true;
+          state.stopwatch.startTime = performance.now() - state.stopwatch.elapsedTime;
+          dom.swBtnStartLabel.textContent = 'Pause';
+          dom.swBtnStart.classList.add('btn-danger');
+
+          state.stopwatch.timerId = requestAnimationFrame(function step(now) {
+            if (!state.stopwatch.running) return;
+            state.stopwatch.elapsedTime = now - state.stopwatch.startTime;
+            dom.swDisplay.textContent = formatStopwatchTime(state.stopwatch.elapsedTime);
+            state.stopwatch.timerId = requestAnimationFrame(step);
+          });
+        } else {
+          state.stopwatch.running = false;
+          cancelAnimationFrame(state.stopwatch.timerId);
+          dom.swBtnStartLabel.textContent = 'Resume';
+          dom.swBtnStart.classList.remove('btn-danger');
+        }
+      }
+
+      function recordLap() {
+        if (!state.stopwatch.running && state.stopwatch.elapsedTime === 0) return;
+        playBlipSound(1000);
+        const lapTime = state.stopwatch.elapsedTime;
+        state.stopwatch.laps.unshift(lapTime);
+        renderLaps();
+      }
+
+      function renderLaps() {
+        if (state.stopwatch.laps.length === 0) {
+          dom.swLapsBox.innerHTML = '<div class="lap-item" style="color:var(--text-muted); justify-content:center;">No laps recorded</div>';
+          return;
+        }
+
+        dom.swLapsBox.innerHTML = '';
+        state.stopwatch.laps.forEach((lap, idx) => {
+          const item = document.createElement('div');
+          item.className = 'lap-item';
+          const lapNum = state.stopwatch.laps.length - idx;
+          item.innerHTML = `
+            <span class="lap-num">LAP ${padZero(lapNum)}</span>
+            <span class="lap-time">${formatStopwatchTime(lap)}</span>
+          `;
+          dom.swLapsBox.appendChild(item);
+        });
+      }
+
+      function resetStopwatch() {
+        playBlipSound(500);
+        state.stopwatch.running = false;
+        cancelAnimationFrame(state.stopwatch.timerId);
+        state.stopwatch.elapsedTime = 0;
+        state.stopwatch.laps = [];
+        dom.swDisplay.textContent = '00:00:00.00';
+        dom.swBtnStartLabel.textContent = 'Start';
+        dom.swBtnStart.classList.remove('btn-danger');
+        renderLaps();
+      }
+
+      /* ------------------------------------------------------------------------
+       * COUNTDOWN TIMER ENGINE
+       * ------------------------------------------------------------------------ */
+      const RING_CIRCUMFERENCE = 2 * Math.PI * 110; // r=110, ~691.15
+
+      function setTimerRemaining(seconds) {
+        state.timer.remainingSeconds = seconds;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        dom.tmrDisplay.textContent = `${padZero(mins)}:${padZero(secs)}`;
+
+        const progress = seconds / state.timer.totalSeconds;
+        const offset = RING_CIRCUMFERENCE * (1 - progress);
+        dom.tmrRing.style.strokeDashoffset = offset;
+      }
+
+      function toggleTimer() {
+        playBlipSound(750);
+        if (!state.timer.running) {
+          if (state.timer.remainingSeconds <= 0) {
+            setTimerRemaining(state.timer.totalSeconds);
+          }
+          state.timer.running = true;
+          dom.tmrBtnStartLabel.textContent = 'Pause';
+          dom.tmrBtnStart.classList.add('btn-danger');
+
+          state.timer.timerId = setInterval(() => {
+            if (state.timer.remainingSeconds > 0) {
+              setTimerRemaining(state.timer.remainingSeconds - 1);
+            } else {
+              clearInterval(state.timer.timerId);
+              state.timer.running = false;
+              dom.tmrBtnStartLabel.textContent = 'Start';
+              dom.tmrBtnStart.classList.remove('btn-danger');
+              playTimerFinishChime();
+              showToast('TIMER ELAPSED!');
+            }
+          }, 1000);
+        } else {
+          state.timer.running = false;
+          clearInterval(state.timer.timerId);
+          dom.tmrBtnStartLabel.textContent = 'Resume';
+          dom.tmrBtnStart.classList.remove('btn-danger');
+        }
+      }
+
+      function resetTimer() {
+        playBlipSound(500);
+        state.timer.running = false;
+        clearInterval(state.timer.timerId);
+        dom.tmrBtnStartLabel.textContent = 'Start';
+        dom.tmrBtnStart.classList.remove('btn-danger');
+        setTimerRemaining(state.timer.totalSeconds);
+      }
+
+      /* ------------------------------------------------------------------------
+       * INTERACTIVE CANVAS PARTICLE ENGINE (Floating Cyber Dust with Touch Support)
+       * ------------------------------------------------------------------------ */
+      const canvasCtx = dom.canvas.getContext('2d');
+      let particles = [];
+      const PARTICLE_COUNT = 65;
+      let mousePos = { x: -1000, y: -1000 };
+
+      function resizeCanvas() {
+        dom.canvas.width = window.innerWidth;
+        dom.canvas.height = window.innerHeight;
+      }
+
+      class Particle {
+        constructor() {
+          this.reset(true);
+        }
+
+        reset(initial = false) {
+          this.x = Math.random() * dom.canvas.width;
+          this.y = initial ? Math.random() * dom.canvas.height : dom.canvas.height + 10;
+          this.size = Math.random() * 2.5 + 1;
+          this.speedY = -(Math.random() * 0.8 + 0.2);
+          this.speedX = (Math.random() - 0.5) * 0.5;
+          this.alpha = Math.random() * 0.6 + 0.2;
+          this.decay = Math.random() * 0.002 + 0.001;
+          this.hueOffset = Math.random() * 40 - 20;
+        }
+
+        update() {
+          this.y += this.speedY;
+          this.x += this.speedX;
+          this.alpha -= this.decay;
+
+          // Mouse / Touch gentle repulsion
+          const dx = this.x - mousePos.x;
+          const dy = this.y - mousePos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            const force = (100 - dist) / 100;
+            this.x += (dx / dist) * force * 2;
+            this.y += (dy / dist) * force * 2;
+          }
+
+          if (this.alpha <= 0 || this.y < -10) {
+            this.reset();
+          }
+        }
+
+        draw(ctx, primaryHue) {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(${primaryHue + this.hueOffset}, 100%, 75%, ${this.alpha})`;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = `hsl(${primaryHue}, 100%, 50%)`;
+          ctx.fill();
+        }
+      }
+
+      function initParticles() {
+        resizeCanvas();
+        particles = [];
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * RAF RENDER LOOP (FPS, Particles, Spectrum Shift)
+       * ------------------------------------------------------------------------ */
+      let frameCount = 0;
+      let lastFpsUpdate = performance.now();
+
+      function renderLoop(currentTime) {
+        requestAnimationFrame(renderLoop);
+
+        // Calculate FPS
+        frameCount++;
+        if (currentTime - lastFpsUpdate >= 500) {
+          const fps = Math.round((frameCount * 1000) / (currentTime - lastFpsUpdate));
+          dom.hudFps.textContent = fps;
+          frameCount = 0;
+          lastFpsUpdate = currentTime;
+        }
+
+        // Auto spectrum color cycle if active
+        if (state.theme === 'auto') {
+          state.spectrumHue = (state.spectrumHue + 0.25) % 360;
+          const secHue = (state.spectrumHue + 140) % 360;
+          const primary = `hsl(${state.spectrumHue}, 100%, 50%)`;
+          const secondary = `hsl(${secHue}, 100%, 55%)`;
+          const glow = `hsla(${state.spectrumHue}, 100%, 50%, 0.45)`;
+          const glowSec = `hsla(${secHue}, 100%, 55%, 0.35)`;
+
+          applyThemeProperties(primary, secondary, glow, glowSec);
+        }
+
+        // Render floating particles
+        if (state.particlesEnabled) {
+          canvasCtx.clearRect(0, 0, dom.canvas.width, dom.canvas.height);
+          let activeHue = 170;
+          if (state.theme === 'auto') {
+            activeHue = state.spectrumHue;
+          } else if (state.theme === 'matrix') {
+            activeHue = 135;
+          } else if (state.theme === 'sunset') {
+            activeHue = 25;
+          } else if (state.theme === 'arctic') {
+            activeHue = 195;
+          } else if (state.theme === 'vapor') {
+            activeHue = 330;
+          }
+          particles.forEach(p => {
+            p.update();
+            p.draw(canvasCtx, activeHue);
+          });
+        } else {
+          canvasCtx.clearRect(0, 0, dom.canvas.width, dom.canvas.height);
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * VIEW SWITCHING LOGIC
+       * ------------------------------------------------------------------------ */
+      function switchView(viewName) {
+        state.currentView = viewName;
+        state.isAnalogActive = (viewName === 'analog');
+
+        dom.tabs.forEach(t => {
+          const matches = t.getAttribute('data-view') === viewName;
+          t.classList.toggle('active', matches);
+          t.setAttribute('aria-selected', matches ? 'true' : 'false');
+        });
+
+        dom.viewClock.classList.toggle('active', viewName === 'clock');
+        dom.viewAnalog.classList.toggle('active', viewName === 'analog');
+        dom.viewStopwatch.classList.toggle('active', viewName === 'stopwatch');
+        dom.viewTimer.classList.toggle('active', viewName === 'timer');
+        dom.viewWorld.classList.toggle('active', viewName === 'world');
+
+        dom.btnToggleAnalog.classList.toggle('active', state.isAnalogActive);
+        dom.labelToggleAnalog.textContent = state.isAnalogActive ? 'DIGITAL MODE' : 'ANALOG MODE';
+
+        if (viewName === 'world') {
+          updateWorldClocks();
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * EVENT LISTENERS SETUP WITH COMPLETE TOUCH & ACCESSIBILITY SUPPORT
+       * ------------------------------------------------------------------------ */
+      function setupEvents() {
+        // Window Resize
+        window.addEventListener('resize', resizeCanvas);
+
+        // Mouse & Touch Move for Particle Interactive Field
+        window.addEventListener('mousemove', e => {
+          mousePos.x = e.clientX;
+          mousePos.y = e.clientY;
+        });
+        window.addEventListener('mouseleave', () => {
+          mousePos.x = -1000;
+          mousePos.y = -1000;
+        });
+
+        function handleTouchMove(e) {
+          if (e.touches && e.touches.length > 0) {
+            mousePos.x = e.touches[0].clientX;
+            mousePos.y = e.touches[0].clientY;
+          }
+        }
+        window.addEventListener('touchstart', handleTouchMove, { passive: true });
+        window.addEventListener('touchmove', handleTouchMove, { passive: true });
+        window.addEventListener('touchend', () => {
+          mousePos.x = -1000;
+          mousePos.y = -1000;
+        }, { passive: true });
+
+        // Tab Navigation
+        dom.tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            playBlipSound(900);
+            switchView(tab.getAttribute('data-view'));
+          });
+        });
+
+        // Click Digits to Cycle Font Styles
+        const digitGroupElements = [
+          dom.clockDisplayRow,
+          document.getElementById('group-hours'),
+          document.getElementById('group-minutes'),
+          document.getElementById('group-seconds')
+        ];
+        digitGroupElements.forEach(el => {
+          if (el) {
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              cycleFontStyle();
+            });
+          }
+        });
+
+        // Cycle Font Style Badge Button
+        dom.btnCycleFontBadge.addEventListener('click', cycleFontStyle);
+
+        // Analog Mode Toggle Buttons
+        dom.btnToggleAnalog.addEventListener('click', toggleAnalogMode);
+
+        // World Clocks Toggle Button
+        dom.btnToggleWorldClocks.addEventListener('click', toggleWorldClocks);
+
+        // 12H / 24H Toggle
+        function handleFormatToggle() {
+          playBlipSound(650);
+          state.is24Hour = !state.is24Hour;
+          dom.toggleHourFormat.classList.toggle('active', state.is24Hour);
+          dom.toggleHourFormat.setAttribute('aria-checked', state.is24Hour ? 'true' : 'false');
+          dom.hourFormatLabel.textContent = state.is24Hour ? '24-HOUR' : '12-HOUR';
+          updateClock();
+          updateWorldClocks();
+          showToast(state.is24Hour ? 'FORMAT: 24-HOUR' : 'FORMAT: 12-HOUR');
+        }
+        dom.toggleHourFormat.addEventListener('click', handleFormatToggle);
+        dom.toggleHourFormat.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleFormatToggle();
+          }
+        });
+
+        // Particles Toggle
+        function handleParticlesToggle() {
+          playBlipSound(650);
+          state.particlesEnabled = !state.particlesEnabled;
+          dom.toggleParticles.classList.toggle('active', state.particlesEnabled);
+          dom.toggleParticles.setAttribute('aria-checked', state.particlesEnabled ? 'true' : 'false');
+        }
+        dom.toggleParticles.addEventListener('click', handleParticlesToggle);
+        dom.toggleParticles.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleParticlesToggle();
+          }
+        });
+
+        // CRT Scanlines Toggle
+        dom.btnToggleCrt.addEventListener('click', () => {
+          playBlipSound(800);
+          state.crtEnabled = !state.crtEnabled;
+          dom.crtScreen.classList.toggle('disabled', !state.crtEnabled);
+          dom.btnToggleCrt.classList.toggle('active', state.crtEnabled);
+        });
+
+        // Screensaver / Fullscreen Buttons
+        dom.btnScreensaver.addEventListener('click', toggleScreensaver);
+        dom.btnExitScreensaver.addEventListener('click', disableScreensaverMode);
+
+        // Audio Engine Toggle
+        dom.btnToggleAudio.addEventListener('click', () => {
+          initAudioContext();
+          state.audioEnabled = !state.audioEnabled;
+          dom.btnToggleAudio.classList.toggle('active', state.audioEnabled);
+          dom.btnToggleAudio.classList.toggle('audio-active', state.audioEnabled);
+          toggleAmbientDrone(state.audioEnabled);
+          if (state.audioEnabled) {
+            playBlipSound(1046, 'sine', 0.1);
+            showToast('AUDIO SYSTEM ACTIVE');
+          } else {
+            showToast('AUDIO SYSTEM MUTED');
+          }
+        });
+
+        // Theme Chips Click
+        dom.themeChips.forEach(chip => {
+          chip.addEventListener('click', () => {
+            playBlipSound(850);
+            setTheme(chip.getAttribute('data-theme'));
+          });
+        });
+
+        // Custom Color Picker
+        dom.customColorPicker.addEventListener('input', e => {
+          state.customColor = e.target.value;
+          setTheme('custom');
+        });
+
+        // Pulse Selector
+        dom.selectPulseMode.addEventListener('change', e => {
+          playBlipSound(600);
+          const mode = e.target.value;
+          dom.pulseWrapper.className = `pulse-engine ${mode}`;
+          state.pulseMode = mode;
+        });
+
+        // Glow Intensity Slider
+        dom.sliderGlow.addEventListener('input', e => {
+          state.glowMultiplier = parseFloat(e.target.value);
+          const root = document.documentElement;
+          root.style.setProperty('--pulse-scale', (1 + 0.02 * state.glowMultiplier).toFixed(3));
+          dom.ambientGlow.style.opacity = (0.35 * state.glowMultiplier).toFixed(2);
+        });
+
+        // Alarm Controls
+        dom.toggleAlarmArmed.addEventListener('click', toggleAlarmArmed);
+        dom.toggleAlarmArmed.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleAlarmArmed();
+          }
+        });
+        dom.alarmTimeInput.addEventListener('change', () => {
+          state.alarm.time = dom.alarmTimeInput.value;
+          if (state.alarm.armed) {
+            dom.alarmToggleStatus.textContent = `ALARM: [${state.alarm.time}]`;
+            dom.hudAlarmLabel.textContent = state.alarm.time;
+          }
+        });
+        dom.btnAlarmNow1.addEventListener('click', () => setAlarmOffsetMinutes(1));
+        dom.btnAlarmNow5.addEventListener('click', () => setAlarmOffsetMinutes(5));
+        dom.btnDismissAlarm.addEventListener('click', dismissAlarm);
+
+        // Help Modal Open / Close
+        dom.btnOpenHelp.addEventListener('click', () => {
+          playBlipSound(700);
+          dom.shortcutsModal.classList.add('open');
+        });
+        dom.btnCloseModal.addEventListener('click', () => {
+          playBlipSound(500);
+          dom.shortcutsModal.classList.remove('open');
+        });
+        dom.shortcutsModal.addEventListener('click', e => {
+          if (e.target === dom.shortcutsModal) {
+            dom.shortcutsModal.classList.remove('open');
+          }
+        });
+
+        // Brand Logo Easter Egg
+        dom.brandLogo.addEventListener('click', () => {
+          playBlipSound(1200);
+          cycleFontStyle();
+        });
+
+        // Stopwatch Events
+        dom.swBtnStart.addEventListener('click', toggleStopwatch);
+        dom.swBtnLap.addEventListener('click', recordLap);
+        dom.swBtnReset.addEventListener('click', resetStopwatch);
+
+        // Timer Events
+        dom.tmrBtnStart.addEventListener('click', toggleTimer);
+        dom.tmrBtnReset.addEventListener('click', resetTimer);
+        dom.tmrPresets.forEach(preset => {
+          preset.addEventListener('click', () => {
+            playBlipSound(700);
+            dom.tmrPresets.forEach(p => p.classList.remove('active'));
+            preset.classList.add('active');
+            const seconds = parseInt(preset.getAttribute('data-time'), 10);
+            state.timer.totalSeconds = seconds;
+            resetTimer();
+          });
+        });
+
+        // Global Keyboard Navigation
+        window.addEventListener('keydown', handleKeyNavigation);
+
+        // Fullscreen change listener to sync screensaver state
+        document.addEventListener('fullscreenchange', () => {
+          if (!document.fullscreenElement && state.screensaverMode) {
+            disableScreensaverMode();
+          }
+        });
+      }
+
+      function handleKeyNavigation(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+        const key = e.key.toUpperCase();
+
+        if (key === 'S') {
+          cycleFontStyle();
+        } else if (key === 'A') {
+          toggleAnalogMode();
+        } else if (key === 'W') {
+          toggleWorldClocks();
+        } else if (key === 'F') {
+          toggleScreensaver();
+        } else if (key === 'H') {
+          dom.toggleHourFormat.click();
+        } else if (key === 'T') {
+          const themes = ['cyberpunk', 'matrix', 'sunset', 'arctic', 'vapor', 'auto'];
+          const nextIdx = (themes.indexOf(state.theme) + 1) % themes.length;
+          setTheme(themes[nextIdx]);
+        } else if (key === 'P') {
+          const select = dom.selectPulseMode;
+          select.selectedIndex = (select.selectedIndex + 1) % select.options.length;
+          select.dispatchEvent(new Event('change'));
+        } else if (key === 'M') {
+          dom.btnToggleAudio.click();
+        } else if (key === 'C') {
+          dom.btnToggleCrt.click();
+        } else if (key === '?' || key === '/') {
+          dom.btnOpenHelp.click();
+        } else if (e.key === 'Escape') {
+          if (state.alarm.triggered) {
+            dismissAlarm();
+          }
+          dom.shortcutsModal.classList.remove('open');
+          if (state.screensaverMode) {
+            disableScreensaverMode();
+          }
+        } else if (key === '1') {
+          switchView('clock');
+        } else if (key === '2') {
+          switchView('analog');
+        } else if (key === '3') {
+          switchView('stopwatch');
+        } else if (key === '4') {
+          switchView('timer');
+        } else if (key === '5') {
+          switchView('world');
+        } else if (e.code === 'Space') {
+          e.preventDefault();
+          if (state.alarm.triggered) {
+            dismissAlarm();
+          } else if (state.currentView === 'stopwatch') {
+            dom.swBtnStart.click();
+          } else if (state.currentView === 'timer') {
+            dom.tmrBtnStart.click();
+          }
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+       * BOOTSTRAP INITIALIZATION
+       * ------------------------------------------------------------------------ */
+      function init() {
+        // Detect Local Timezone
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'LOCAL';
+          dom.hudTimezone.textContent = tz.split('/').pop().toUpperCase().slice(0, 8);
+        } catch (e) {
+          dom.hudTimezone.textContent = 'LOCAL';
+        }
+
+        // Apply initial pulse mode and format
+        dom.pulseWrapper.className = `pulse-engine ${state.pulseMode}`;
+        dom.toggleHourFormat.classList.add('active'); // 24H default
+
+        // Build Analog SVG dial
+        buildAnalogDial();
+
+        // Build Dedicated World Clocks Grid
+        buildDedicatedWorldClocks();
+
+        // Setup Events & Particles
+        setupEvents();
+        initParticles();
+
+        // Initial Theme
+        setTheme('cyberpunk');
+
+        // Initial Clocks Run
+        updateClock();
+        updateWorldClocks();
+
+        // High frequency ticker for smooth millisecond display and analog sweep
+        setInterval(updateClock, 30);
+        setInterval(updateWorldClocks, 1000);
+
+        // RAF Animation Loop
+        requestAnimationFrame(renderLoop);
+      }
+
+      // Start application when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+    })();
+  </script>
+</body>
+</html>
